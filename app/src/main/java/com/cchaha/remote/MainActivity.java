@@ -359,11 +359,10 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * 底部操作条防重叠修复：cc-haha 页面底部工具条（审批/模型选择/发送按钮）
-     * 在手机宽度下按钮互相重叠（gavel 与模型选择器压在一起，点不到）。
-     * 注入 CSS 让工具条"放不下就自动换行"——宽屏不受影响（本来就放得下），
-     * 窄屏（含 390dp+ 的现代手机）自动换行不再重叠。
-     * 之前限制 max-width:380px 导致 390dp 手机不生效，故去掉宽度限制。
+     * 底部操作条一行化修复：cc-haha 页面底部工具条（新会话/审批/模型选择/发送按钮）
+     * 在手机宽度下按钮互相重叠或换行成多行，视觉杂乱。
+     * 注入 CSS：不换行 + 按钮缩小到 38px + 间距收紧到 2px，
+     * 让所有按钮挤在一行且不重叠（图标按钮缩到 32px，模型选择器文字截断）。
      * 用 style 标签注入——SPA 内部路由重建 DOM 后依然生效。
      */
     private void injectNarrowScreenFix() {
@@ -371,8 +370,12 @@ public class MainActivity extends Activity {
         webView.evaluateJavascript(
                 "(function(){if(document.getElementById('haha-narrow-fix'))return;" +
                 "var s=document.createElement('style');s.id='haha-narrow-fix';" +
-                "s.textContent='[class*=\"justify-end\"][class*=\"gap-2\"]{flex-wrap:wrap!important;gap:4px!important;padding-bottom:6px!important;}" +
-                "[class*=\"justify-end\"][class*=\"gap-2\"]>*{min-width:0!important;flex-shrink:1!important;}';" +
+                "s.textContent='" +
+                "[class*=\"justify-end\"][class*=\"gap-2\"]{flex-wrap:nowrap!important;gap:2px!important;padding-bottom:2px!important;}" +
+                "[class*=\"justify-end\"][class*=\"gap-2\"]>*{min-width:0!important;flex-shrink:1!important;}" +
+                "[class*=\"justify-end\"][class*=\"gap-2\"] button{height:38px!important;min-height:38px!important;padding-left:6px!important;padding-right:6px!important;flex-shrink:1!important;min-width:0!important;}" +
+                "[class*=\"justify-end\"][class*=\"gap-2\"] button .material-symbols-outlined{font-size:17px!important;}" +
+                "[class*=\"justify-end\"][class*=\"gap-2\"] button[class*=\"shrink-0\"]{width:auto!important;flex-shrink:1!important;}';" +
                 "document.head.appendChild(s);})();", null);
     }
 

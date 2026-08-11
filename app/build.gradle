@@ -19,8 +19,8 @@ android {
         minSdk 26
         targetSdk 34
         // 注意：每次发版必须同步递增 versionCode 和 versionName（v1.0.6 = code 6）
-        versionCode 9
-        versionName "1.0.9"
+        versionCode 10
+        versionName "1.0.10"
     }
 
     signingConfigs {
