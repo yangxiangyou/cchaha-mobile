@@ -212,6 +212,7 @@ public class MainActivity extends Activity {
                 setConnState(ConnState.CONNECTED);
                 urlInput.setText(url);
                 refreshButtons();
+                injectNarrowScreenFix();
             }
 
             @Override
@@ -355,6 +356,23 @@ public class MainActivity extends Activity {
         } catch (Exception e) {
             Toast.makeText(this, R.string.scan_failed, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    /**
+     * 窄屏修复：cc-haha 页面底部操作条在 ≤380px 宽度下按钮互相重叠
+     * （gavel 审批按钮与模型选择器压在一起，点不到）。
+     * 注入 CSS 让工具条窄屏时自动换行 + 按钮可收缩。
+     * 用 style 标签注入而非改 DOM 样式——SPA 内部路由重建 DOM 后依然生效。
+     */
+    private void injectNarrowScreenFix() {
+        if (webView == null) return;
+        webView.evaluateJavascript(
+                "(function(){if(document.getElementById('haha-narrow-fix'))return;" +
+                "var s=document.createElement('style');s.id='haha-narrow-fix';" +
+                "s.textContent='@media (max-width:380px){" +
+                "[class*=\"justify-end\"][class*=\"gap-2\"]{flex-wrap:wrap!important;gap:4px!important;padding-bottom:6px!important;}" +
+                "[class*=\"justify-end\"][class*=\"gap-2\"]>*{min-width:0!important;flex-shrink:1!important;}'}';" +
+                "document.head.appendChild(s);})();", null);
     }
 
     private void loadUrl(String url) {
