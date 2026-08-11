@@ -16,6 +16,11 @@
     <string name="not_haha_qr">This QR code is not a cc-haha connection code</string>
     <string name="scan_cancel">Cancel</string>
     <string name="no_flash">This device has no flashlight</string>
+    <string name="scan_perm_title">Camera permission needed</string>
+    <string name="scan_perm_msg">Haha Remote needs the camera to scan the QR code on your computer screen. Open Settings and allow camera access.</string>
+    <string name="scan_perm_go_settings">Open Settings</string>
+    <string name="scan_retry">Retry</string>
+    <string name="scan_error_detail">Camera failed to start.\nReason: %1$s\n\nIf this repeats, your device camera may be in use by another app, or blocked by the system.</string>
     <string name="network_lost">Network lost — check Wi-Fi / mobile data</string>
     <string name="webview_recovered">Browser engine recovered after a crash</string>
     <string name="download_failed">Cannot open download link</string>

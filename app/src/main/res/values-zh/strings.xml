@@ -16,6 +16,11 @@
     <string name="not_haha_qr">这个二维码不是 cc-haha 连接码</string>
     <string name="scan_cancel">取消</string>
     <string name="no_flash">该设备没有闪光灯</string>
+    <string name="scan_perm_title">需要相机权限</string>
+    <string name="scan_perm_msg">Haha Remote 需要相机来扫描电脑屏幕上的二维码。请到系统设置里允许相机权限。</string>
+    <string name="scan_perm_go_settings">去设置开启</string>
+    <string name="scan_retry">重试</string>
+    <string name="scan_error_detail">相机启动失败。\n原因：%1$s\n\n如果反复出现，可能是相机正被其他应用占用，或被系统禁止。</string>
     <string name="network_lost">网络断开，请检查 Wi-Fi/流量</string>
     <string name="webview_recovered">浏览器内核崩溃后已自动恢复</string>
     <string name="download_failed">无法打开下载链接</string>

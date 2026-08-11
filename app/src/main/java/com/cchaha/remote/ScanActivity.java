@@ -2,10 +2,13 @@ package com.cchaha.remote;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -91,8 +94,7 @@ public class ScanActivity extends ComponentActivity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startCamera();
             } else {
-                Toast.makeText(this, R.string.scan_failed, Toast.LENGTH_LONG).show();
-                finish();
+                showPermissionDialog();
             }
         }
     }
@@ -116,10 +118,45 @@ public class ScanActivity extends ComponentActivity {
                 flashButton.setVisibility(View.VISIBLE);
             } catch (Exception e) {
                 Log.e(TAG, "camera start failed", e);
-                Toast.makeText(this, R.string.scan_failed, Toast.LENGTH_SHORT).show();
-                finish();
+                // 显示具体原因（相机被占用/设备无相机/初始化失败），便于定位
+                runOnUiThread(() -> showCameraErrorDialog(e));
             }
         }, ContextCompat.getMainExecutor(this));
+    }
+
+    /** 相机权限被拒：引导去系统设置开启 */
+    private void showPermissionDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.scan_perm_title)
+                .setMessage(R.string.scan_perm_msg)
+                .setPositiveButton(R.string.scan_perm_go_settings, (d, w) -> {
+                    try {
+                        startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:" + getPackageName())));
+                    } catch (Exception ignored) { }
+                })
+                .setNegativeButton(android.R.string.cancel, (d, w) -> finish())
+                .setOnDismissListener(d -> finish())
+                .show();
+    }
+
+    /** 相机启动失败：显示具体错误 + 重试 */
+    private void showCameraErrorDialog(Exception e) {
+        String detail = e != null ? (e.getClass().getSimpleName() + ": " + e.getMessage()) : "unknown";
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.scan_failed)
+                .setMessage(getString(R.string.scan_error_detail, detail))
+                .setPositiveButton(R.string.scan_retry, (d, w) -> {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                            == PackageManager.PERMISSION_GRANTED) {
+                        startCamera();
+                    } else {
+                        ActivityCompat.requestPermissions(this,
+                                new String[]{Manifest.permission.CAMERA}, REQ_CAMERA);
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, (d, w) -> finish())
+                .show();
     }
 
     /** 相机帧 → ZXing 解码（YUV 直接喂 PlanarYUVLuminanceSource，不用转位图） */
