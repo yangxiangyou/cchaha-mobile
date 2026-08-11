@@ -6,34 +6,60 @@
 
 ## 功能
 
-- 📷 **扫码连接** — 相机对准电脑屏幕上的二维码，完成
+- 📷 **扫码连接** — 自研 CameraX 扫码（不依赖第三方相机页面，兼容性更稳）
 - 🔗 **深链** — 手机浏览器点开 H5 链接，直接唤起本应用并连接
 - 💾 **多台电脑** — 保存多个地址，点选切换，长按重命名/删除
 - 🟢 **连接状态灯** — 灰=未连接 黄=连接中 绿=已连接 红=连不上
 - 🔄 **自动重连** — 网络闪断自动重试，Wi-Fi 恢复后自动连回
-- 📱 **锁屏不断** — 手机锁屏时电脑任务照跑（WakeLock + 桌面端断连宽限）
+- 📱 **锁屏不断** — 手机锁屏时电脑任务照跑
 - 🖼️ **文件双向** — 手机上传图片/文件，下载附件
-- 💥 **崩溃自愈** — 浏览器内核被系统杀掉后自动重建，不白屏
-- 🔐 **Token 加密** — 连接令牌用 Android Keystore AES-GCM 加密存储，不落明文
+- 📱 **窄屏适配** — 自动注入样式，cc-haha 底部操作栏在 ≤380dp 手机上不再重叠
+- 💥 **崩溃自愈** — 浏览器内核崩溃自动重建；真崩溃时显示错误详情页，一键复制反馈
+- 🔐 **Token 加密** — 连接令牌用 Android Keystore AES-GCM 加密存储
 - 🌐 **中英双语**
 
 ## 工作原理
 
-[cc-haha](https://github.com/NanmiCoder/cc-haha) 桌面应用内置本地 H5 服务（`设置 → H5 Access`）。本应用在手机浏览器内核中加载该页面——会话、消息、权限按钮、附件全部可用。数据只走局域网，不经过任何云端。
+[cc-haha](https://github.com/NanmiCoder/cc-haha) 桌面应用内置本地 H5 服务（`设置 → H5 Access`）。本应用在手机浏览器内核中加载该页面——会话、消息、权限按钮、附件全部可用。数据不经过任何云端存储。
 
-> ⚠️ **安全**：H5 链接含 token（等于你电脑的钥匙）。只在信任的网络开启 H5 Access，链接按密码对待。怀疑泄露就在 cc-haha 设置里重新生成 token。
+## 三种连接方式（按场景选）
+
+### 1. 同一网络（局域网）— 最简单
+
+手机和电脑在同一 Wi-Fi（或电脑局域网可达）：App 里直接输入电脑局域网地址，如 `http://192.168.1.20:端口`。**不需要隧道、不需要服务器。**
+
+### 2. 云电脑 / 远程 — 固定域名（长期使用推荐）
+
+云桌面（或任何没有公网 IP 的电脑）+ 自己的 VPS + 自己的域名 = **永久不变的地址**，重启无忧：
+
+```
+ 手机 ──https://你的域名──► 你的 VPS（nginx + HTTPS 证书）
+                                   │  frp 隧道（frps）
+                                   ▼
+                        云电脑（frpc 客户端）──► cc-haha H5
+```
+
+- VPS 跑 `frps`（frp 服务端）+ nginx 反代 + Let's Encrypt 证书
+- 云电脑跑 `frpc`（frp 客户端）后台常驻，开机自启
+- 手机永远用 `https://你的域名/?token=...`——重启、换 IP 都不用管
+
+完整图文教程（服务端 + 客户端 + nginx + 证书 + 自启）：[docs/self-hosted-frp.zh-CN.md](docs/self-hosted-frp.zh-CN.md)
+
+### 3. 快速隧道 — 无需任何服务器（cloudflared）
+
+没有 VPS、没有域名也能用：`cloudflared tunnel --url http://localhost:端口` 几秒钟拿到免费 `https://xxx.trycloudflare.com` 地址。**缺点：每次隧道重启地址会变。** 适合临时测试或偶尔使用：[docs/remote-access.zh-CN.md](docs/remote-access.zh-CN.md)
+
+## 安全须知
+
+- ⚠️ H5 链接含 **token（等于你电脑的钥匙）**：按密码对待，绝不发群里/朋友圈
+- 怀疑泄露：cc-haha 设置 → H5 Access → **Regenerate token** 立即作废旧 token
+- 公网使用**必须 HTTPS**（自己的域名 + 证书），不要用明文 HTTP 传 token
+- 走反向代理（域名/隧道）时，必须把域名加进 cc-haha H5 设置的 **Allowed origins**，否则 token 校验会拒绝连接
+- 连接令牌在手机端用 Android Keystore AES-GCM 加密存储，不落明文
 
 ## 安装
 
-从 [Releases](https://github.com/yangxiangyou/haha-remote/releases) 下载 APK，安装到手机（提示"允许安装未知应用"时允许即可）。要求 **Android 8.0+**。
-
-## 使用
-
-1. 电脑上：打开 cc-haha 桌面应用 → **设置 → H5 Access** → 开启 **Enable H5 access** → 点 **Generate token**，屏幕出现二维码
-2. 手机上：打开 Haha Remote → 点 **📷 扫码连接** → 对准屏幕
-3. 完成。列表里点地址可切换电脑
-
-另一种方式：在 cc-haha 里点 **Copy launch URL**，粘贴到应用里。
+从 [Releases](https://github.com/yangxiangyou/haha-remote/releases) 下载 APK 安装到手机（提示"允许安装未知应用"时允许即可）。要求 **Android 8.0+**。
 
 ## 从源码构建
 
@@ -58,8 +84,6 @@ keyAlias=haha
 keyPassword=你的密码
 ```
 
-生成密钥库：
-
 ```bash
 keytool -genkeypair -v -keystore keystore/release.keystore -alias haha \
   -keyalg RSA -keysize 2048 -validity 10950 \
@@ -70,17 +94,18 @@ keytool -genkeypair -v -keystore keystore/release.keystore -alias haha \
 
 ### CI
 
-GitHub Actions 每次推送自动构建 + 测试；推送 `v*` tag 自动发布 APK 到 Releases：
+GitHub Actions 每次推送自动构建 + 测试；推送 `v*` 标签自动发布 APK 到 Releases：
 
 ```bash
-git tag v1.0.0 && git push origin v1.0.0
+git tag v1.0.6 && git push origin v1.0.6
 ```
 
-CI 里要出正式签名包，添加 secrets（Settings → Secrets and variables → Actions）：`KEYSTORE_BASE64`（release.keystore 的 base64）、`KEYSTORE_PASSWORD`、`KEY_ALIAS`、`KEY_PASSWORD`。未配置时 CI 回退出 debug 签名包。
+CI 里要出正式签名包，添加 secrets：`KEYSTORE_BASE64`、`KEYSTORE_PASSWORD`、`KEY_ALIAS`、`KEY_PASSWORD`。未配置时 CI 回退出 debug 签名包。
 
 ## 隐私
 
 - 无账号、无统计、无任何网络请求（除了你配置的地址）
+- **本仓库不含任何私钥、令牌或个人基础设施信息**——域名/VPS 都是你自己的
 - Token 用 Android Keystore 加密存储
 - 桌面应用必须运行才能遥控——本应用不保存你的代码和会话数据
 
