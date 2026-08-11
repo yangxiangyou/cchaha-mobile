@@ -28,4 +28,12 @@
     <string name="err_check_hint">Check:\n① Is cc-haha running on the computer?\n② Is the address correct? (LAN: same Wi-Fi; remote: public URL or tunnel)\n③ Is H5 Access still enabled?</string>
     <string name="err_tap_refresh">Tap refresh above to retry</string>
     <string name="setup_hint">How to get the address:\n1. Open cc-haha desktop app on your computer\n2. Settings → H5 Access → enable “Enable H5 access”\n3. Tap “Generate token” — a QR code appears on screen\n4. Tap “Scan QR” below to scan it, or tap “Copy launch URL” and paste it above\n\nTap an address to connect; long-press to rename or delete.\nNote: phone and computer must be on the same Wi-Fi. The link contains a token — treat it like a password.</string>
+    <string name="session_loading">Loading sessions…</string>
+    <string name="session_refreshing">Refreshing…</string>
+    <string name="session_failed">Cannot reach server — is cc-haha running on the computer?</string>
+    <string name="session_no_host">Configure an address in the connect page first</string>
+    <string name="session_updated">Updated · %1$s</string>
+    <string name="session_cached_at">Cached at %1$s</string>
+    <string name="session_cached_stale">Server offline, showing cache (%1$s)</string>
+    <string name="session_refresh_failed">Refresh failed — server not responding</string>
 </resources>

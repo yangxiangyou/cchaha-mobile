@@ -46,6 +46,11 @@ public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
     private static final int REQ_FILE_CHOOSER = 1001;
     private static final int REQ_SCAN = 1002;
+    static final String EXTRA_OPEN_SESSION = "open_session_id";
+    static final String EXTRA_SESSION_TITLE = "open_session_title";
+
+    private String pendingSessionId = null;
+    private String pendingSessionTitle = null;
 
     enum ConnState { CONNECTING, CONNECTED, ERROR, DISCONNECTED }
 
@@ -144,6 +149,12 @@ public class MainActivity extends Activity {
 
         registerNetworkMonitor();
 
+        // 原生会话列表点击进入：记录待定位的会话
+        if (getIntent() != null) {
+            pendingSessionId = getIntent().getStringExtra(EXTRA_OPEN_SESSION);
+            pendingSessionTitle = getIntent().getStringExtra(EXTRA_SESSION_TITLE);
+        }
+
         // 深链：外部 URL 唤起（浏览器点 H5 链接 / haha:// 协议）
         Uri data = getIntent().getData();
         if (data != null && UrlUtils.isUsable(data.toString())) {
@@ -165,6 +176,30 @@ public class MainActivity extends Activity {
             startActivity(i);
             finish();
         }
+    }
+
+    /**
+     * 尽力自动定位会话：页面加载后注入 JS，
+     * 自动点开"选择项目"（如需要）并按标题文本匹配点击目标会话。
+     * cc-haha H5 不支持 URL 定位会话，此为页面自动化兜底；失败则用户手动点。
+     */
+    private void autoOpenSession() {
+        if (pendingSessionId == null || webView == null) return;
+        String target = pendingSessionTitle != null ? pendingSessionTitle : pendingSessionId;
+        if (target.length() > 24) target = target.substring(0, 24);
+        final String match = target.replace("'", "\\'");
+        final String sid = pendingSessionId;
+        pendingSessionId = null;
+        pendingSessionTitle = null;
+        webView.evaluateJavascript(
+                "(function(){var target='" + match + "',sid='" + sid + "',steps=0;" +
+                "var t=setInterval(function(){steps++;" +
+                "if(!window.__hahaPicked){var pk=[...document.querySelectorAll('button')].find(function(b){return /选择项目/.test(b.textContent||'')});" +
+                "if(pk){pk.click();window.__hahaPicked=true;}}" +
+                "var it=[...document.querySelectorAll('[class*=\"cursor-pointer\"],button')].find(function(e){" +
+                "var x=(e.textContent||'').trim();return x.length>4&&x.length<80&&(x.indexOf(target.slice(0,12))>=0||target.indexOf(x.slice(0,10))>=0);});" +
+                "if(it){it.click();clearInterval(t);}" +
+                "if(steps>40)clearInterval(t);},1000);})();", null);
     }
 
     /** 新建 WebView（可被 render 崩溃后重建复用） */
@@ -213,6 +248,7 @@ public class MainActivity extends Activity {
                 urlInput.setText(url);
                 refreshButtons();
                 injectNarrowScreenFix();
+                autoOpenSession();
             }
 
             @Override
@@ -312,9 +348,8 @@ public class MainActivity extends Activity {
         });
         btnScan.setOnClickListener(v -> startScanner());
         btnHome.setOnClickListener(v -> {
-            Intent i = new Intent(this, SetupActivity.class);
-            i.putExtra(SetupActivity.EXTRA_MANUAL, true);
-            startActivity(i);
+            // 回原生会话列表
+            startActivity(new Intent(this, SessionListActivity.class));
             finish();
         });
     }
@@ -509,9 +544,8 @@ public class MainActivity extends Activity {
                 webView.goBack();
                 return true;
             }
-            Intent i = new Intent(this, SetupActivity.class);
-            i.putExtra(SetupActivity.EXTRA_MANUAL, true);
-            startActivity(i);
+            // 没有可返回的历史则回到会话列表
+            startActivity(new Intent(this, SessionListActivity.class));
             finish();
             return true;
         }

@@ -38,6 +38,11 @@
             android:name=".CrashActivity"
             android:exported="false" />
 
+        <!-- 原生会话列表（Codex 式） -->
+        <activity
+            android:name=".SessionListActivity"
+            android:exported="false" />
+
         <!-- 扫码页（CameraX 自研） -->
         <activity
             android:name=".ScanActivity"

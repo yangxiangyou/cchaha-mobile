@@ -60,14 +60,14 @@ public class SetupActivity extends Activity {
             Storage.SavedHost host = storage.upsertHost(data.toString());
             if (host != null) {
                 storage.setCurrentHost(host.id);
-                startMain();
+                startSessionList();
                 return;
             }
         }
 
-        // 冷启动且有当前地址：直接进主界面；从主界面回来则显示列表
+        // 冷启动且有当前地址：直接进原生会话列表；从主界面回来则显示列表
         if (!manual && storage.getCurrentHost() != null) {
-            startMain();
+            startSessionList();
             return;
         }
 
@@ -126,7 +126,12 @@ public class SetupActivity extends Activity {
     }
 
     private void startMain() {
-        startActivity(new Intent(this, MainActivity.class));
+        // 连接成功 → 原生会话列表（Codex 式秒开）
+        startSessionList();
+    }
+
+    private void startSessionList() {
+        startActivity(new Intent(this, SessionListActivity.class));
         finish();
     }
 
