@@ -371,7 +371,10 @@ public class MainActivity extends Activity {
                 "(function(){if(document.getElementById('haha-narrow-fix'))return;" +
                 "var s=document.createElement('style');s.id='haha-narrow-fix';" +
                 "s.textContent='" +
-                "[class*=\"justify-end\"][class*=\"gap-2\"]{flex-wrap:nowrap!important;gap:2px!important;padding-bottom:2px!important;}" +
+                "div[class*=\"border-t\"]:has(> div[class*=\"justify-end\"]){gap:4px!important;}" +
+                "div[class*=\"shrink\"]:has(> button){gap:4px!important;}" +
+                "div[class*=\"shrink\"]:has(> button) button{width:36px!important;height:38px!important;min-height:38px!important;padding:0 4px!important;}" +
+                "[class*=\"justify-end\"][class*=\"gap-2\"]{flex-wrap:nowrap!important;gap:2px!important;padding-bottom:2px!important;padding-right:4px!important;}" +
                 "[class*=\"justify-end\"][class*=\"gap-2\"]>*{min-width:0!important;flex-shrink:1!important;}" +
                 "[class*=\"justify-end\"][class*=\"gap-2\"] button{height:38px!important;min-height:38px!important;padding-left:6px!important;padding-right:6px!important;flex-shrink:1!important;min-width:0!important;}" +
                 "[class*=\"justify-end\"][class*=\"gap-2\"] button .material-symbols-outlined{font-size:17px!important;}" +
