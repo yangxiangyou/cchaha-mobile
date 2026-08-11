@@ -1,0 +1,64 @@
+plugins {
+    id 'com.android.application'
+}
+
+// 读取签名配置（keystore.properties 不进 git，见 README）
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file('keystore.properties')
+boolean hasSigning = keystorePropsFile.exists()
+if (hasSigning) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+}
+
+android {
+    namespace 'com.cchaha.remote'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.cchaha.remote"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    signingConfigs {
+        release {
+            if (hasSigning) {
+                storeFile rootProject.file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+        }
+        release {
+            // R8 压缩混淆 + 资源收缩
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // 有正式签名配置就用正式签名，否则回退 debug 签名（便于本地出包）
+            signingConfig hasSigning ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+dependencies {
+    // 扫码连接：扫电脑屏幕上的 H5 二维码
+    implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+
+    testImplementation 'junit:junit:4.13.2'
+}

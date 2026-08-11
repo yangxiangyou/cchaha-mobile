@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Haha Remote</string>
+    <string name="setup_subtitle">cc-haha 桌面会话遥控</string>
+    <string name="url_hint">粘贴电脑上的 H5 链接</string>
+    <string name="action_connect">连接</string>
+    <string name="action_scan">📷 扫码连接</string>
+    <string name="action_rename">重命名</string>
+    <string name="action_delete">删除</string>
+    <string name="current_badge">当前</string>
+    <string name="host_deleted">地址已删除</string>
+    <string name="enter_url_first">先粘贴 H5 链接，或扫码</string>
+    <string name="invalid_url">地址无效，需要 http(s)://主机:端口 格式</string>
+    <string name="scan_prompt">对准电脑屏幕上的二维码</string>
+    <string name="scan_failed">无法打开相机，请手动输入地址</string>
+    <string name="not_haha_qr">这个二维码不是 cc-haha 连接码</string>
+    <string name="network_lost">网络断开，请检查 Wi-Fi/流量</string>
+    <string name="webview_recovered">浏览器内核崩溃后已自动恢复</string>
+    <string name="download_failed">无法打开下载链接</string>
+    <string name="err_cant_connect">连接不到电脑</string>
+    <string name="err_check_hint">检查：\n① 电脑上的 cc-haha 是否在运行\n② 手机和电脑是否在同一个 Wi-Fi\n③ H5 开关是否还开着</string>
+    <string name="err_tap_refresh">点上方刷新按钮重试</string>
+    <string name="setup_hint">怎么拿地址：\n1. 电脑上打开 cc-haha 桌面应用\n2. 设置 → H5 Access → 开启 Enable H5 access\n3. 点 Generate token，屏幕上会出现二维码\n4. 点下方「扫码连接」扫它，或点 Copy launch URL 粘贴到上面\n\n点地址直接连接，长按可重命名或删除。\n注意：手机和电脑必须连同一个 Wi-Fi；链接含 token，别发给别人。</string>
+</resources>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#111418">
+
+    <!-- 顶部工具条 -->
+    <LinearLayout
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#111418"
+        android:paddingStart="2dp"
+        android:paddingEnd="4dp">
+
+        <ImageButton
+            android:id="@+id/btn_back"
+            android:layout_width="36dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_back"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="后退" />
+
+        <ImageButton
+            android:id="@+id/btn_fwd"
+            android:layout_width="36dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_fwd"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="前进" />
+
+        <!-- 连接状态灯：灰=未连接 黄=连接中 绿=已连接 红=失败 -->
+        <View
+            android:id="@+id/status_dot"
+            android:layout_width="8dp"
+            android:layout_height="8dp"
+            android:layout_marginStart="2dp"
+            android:background="@drawable/status_dot_bg" />
+
+        <EditText
+            android:id="@+id/url_input"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/url_bg"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:textColor="#E6E6E6"
+            android:textColorHint="#66707A"
+            android:textSize="12sp"
+            android:singleLine="true"
+            android:inputType="textUri"
+            android:imeOptions="actionGo"
+            android:hint="输入 H5 地址后回车" />
+
+        <ImageButton
+            android:id="@+id/btn_scan"
+            android:layout_width="36dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_scan"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="扫码连接" />
+
+        <ImageButton
+            android:id="@+id/btn_reload"
+            android:layout_width="36dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_reload"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="刷新" />
+
+        <ImageButton
+            android:id="@+id/btn_home"
+            android:layout_width="36dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_home"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="换地址" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:progressTint="#4DA3FF"
+        android:visibility="gone" />
+
+    <!-- WebView 容器：渲染进程崩溃时可重建而不白屏 -->
+    <FrameLayout
+        android:id="@+id/web_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>

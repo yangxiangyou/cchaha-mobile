@@ -1,0 +1,14 @@
+# Android / Gradle
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+
+# 签名与密钥（绝不入库）
+keystore.properties
+keystore/
+*.jks
+*.keystore

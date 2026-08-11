@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Haha Remote</string>
+    <string name="setup_subtitle">Remote control for cc-haha desktop sessions</string>
+    <string name="url_hint">Paste H5 link from your computer</string>
+    <string name="action_connect">Connect</string>
+    <string name="action_scan">📷 Scan QR</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_delete">Delete</string>
+    <string name="current_badge">CURRENT</string>
+    <string name="host_deleted">Address deleted</string>
+    <string name="enter_url_first">Paste the H5 link or scan the QR code first</string>
+    <string name="invalid_url">Invalid address — need http(s)://host:port</string>
+    <string name="scan_prompt">Point the camera at the QR code on your computer screen</string>
+    <string name="scan_failed">Camera unavailable, enter the address manually</string>
+    <string name="not_haha_qr">This QR code is not a cc-haha connection code</string>
+    <string name="network_lost">Network lost — check Wi-Fi / mobile data</string>
+    <string name="webview_recovered">Browser engine recovered after a crash</string>
+    <string name="download_failed">Cannot open download link</string>
+    <string name="err_cant_connect">Cannot reach your computer</string>
+    <string name="err_check_hint">Check:\n① Is cc-haha running on the computer?\n② Are phone and computer on the same Wi-Fi?\n③ Is H5 Access still enabled?</string>
+    <string name="err_tap_refresh">Tap refresh above to retry</string>
+    <string name="setup_hint">How to get the address:\n1. Open cc-haha desktop app on your computer\n2. Settings → H5 Access → enable “Enable H5 access”\n3. Tap “Generate token” — a QR code appears on screen\n4. Tap “Scan QR” below to scan it, or tap “Copy launch URL” and paste it above\n\nTap an address to connect; long-press to rename or delete.\nNote: phone and computer must be on the same Wi-Fi. The link contains a token — treat it like a password.</string>
+</resources>
