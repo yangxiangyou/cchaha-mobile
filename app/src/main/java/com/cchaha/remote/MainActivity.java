@@ -32,8 +32,6 @@ import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
 
 /**
  * Haha Remote - 主界面
@@ -47,6 +45,7 @@ public class MainActivity extends Activity {
 
     private static final String TAG = "MainActivity";
     private static final int REQ_FILE_CHOOSER = 1001;
+    private static final int REQ_SCAN = 1002;
 
     enum ConnState { CONNECTING, CONNECTED, ERROR, DISCONNECTED }
 
@@ -349,15 +348,10 @@ public class MainActivity extends Activity {
         }
     }
 
-    /** 打开扫码界面，扫电脑屏幕上的 H5 二维码 */
+    /** 打开扫码界面，扫电脑屏幕上的 H5 二维码（自研 CameraX 页面） */
     private void startScanner() {
         try {
-            new IntentIntegrator(this)
-                    .setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-                    .setPrompt(getString(R.string.scan_prompt))
-                    .setOrientationLocked(true)
-                    .setBeepEnabled(false)
-                    .initiateScan();
+            startActivityForResult(new Intent(this, ScanActivity.class), REQ_SCAN);
         } catch (Exception e) {
             Toast.makeText(this, R.string.scan_failed, Toast.LENGTH_SHORT).show();
         }
@@ -412,11 +406,10 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == IntentIntegrator.REQUEST_CODE) {
-            IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-            if (result != null && result.getContents() != null) {
-                String url = result.getContents().trim();
-                if (UrlUtils.isUsable(url)) {
+        if (requestCode == REQ_SCAN) {
+            if (resultCode == RESULT_OK && data != null) {
+                String url = data.getStringExtra(ScanActivity.EXTRA_URL);
+                if (url != null && UrlUtils.isUsable(url)) {
                     loadUrl(url);
                 } else {
                     Toast.makeText(this, R.string.not_haha_qr, Toast.LENGTH_LONG).show();

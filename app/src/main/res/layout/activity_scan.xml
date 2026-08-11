@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- 相机预览 -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/scan_preview"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 暗色遮罩 + 扫描框 -->
+    <View
+        android:id="@+id/scan_frame"
+        android:layout_width="260dp"
+        android:layout_height="260dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="60dp"
+        android:background="@drawable/scan_frame_bg" />
+
+    <TextView
+        android:id="@+id/scan_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="340dp"
+        android:text="@string/scan_prompt"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:background="#66000000"
+        android:padding="10dp" />
+
+    <Button
+        android:id="@+id/scan_flash"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="96dp"
+        android:text="💡"
+        android:textSize="20sp"
+        android:background="@drawable/btn_ghost"
+        android:minWidth="52dp"
+        android:minHeight="52dp"
+        android:visibility="gone" />
+
+    <Button
+        android:id="@+id/scan_cancel"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom"
+        android:text="@string/scan_cancel"
+        android:textSize="15sp"
+        android:background="#CC111418"
+        android:textColor="#C8D0D8" />
+</FrameLayout>

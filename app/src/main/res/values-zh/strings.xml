@@ -14,6 +14,8 @@
     <string name="scan_prompt">对准电脑屏幕上的二维码</string>
     <string name="scan_failed">无法打开相机，请手动输入地址</string>
     <string name="not_haha_qr">这个二维码不是 cc-haha 连接码</string>
+    <string name="scan_cancel">取消</string>
+    <string name="no_flash">该设备没有闪光灯</string>
     <string name="network_lost">网络断开，请检查 Wi-Fi/流量</string>
     <string name="webview_recovered">浏览器内核崩溃后已自动恢复</string>
     <string name="download_failed">无法打开下载链接</string>

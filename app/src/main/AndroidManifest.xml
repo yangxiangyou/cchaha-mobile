@@ -36,6 +36,12 @@
             android:name=".CrashActivity"
             android:exported="false" />
 
+        <!-- 扫码页（CameraX 自研） -->
+        <activity
+            android:name=".ScanActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
         <!-- 主界面：遥控会话 -->
         <activity
             android:name=".MainActivity"

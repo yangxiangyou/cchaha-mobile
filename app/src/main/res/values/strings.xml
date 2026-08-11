@@ -14,6 +14,8 @@
     <string name="scan_prompt">Point the camera at the QR code on your computer screen</string>
     <string name="scan_failed">Camera unavailable, enter the address manually</string>
     <string name="not_haha_qr">This QR code is not a cc-haha connection code</string>
+    <string name="scan_cancel">Cancel</string>
+    <string name="no_flash">This device has no flashlight</string>
     <string name="network_lost">Network lost — check Wi-Fi / mobile data</string>
     <string name="webview_recovered">Browser engine recovered after a crash</string>
     <string name="download_failed">Cannot open download link</string>

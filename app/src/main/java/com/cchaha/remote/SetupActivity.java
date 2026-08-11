@@ -19,8 +19,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
 
 import java.util.List;
 
@@ -31,6 +29,7 @@ import java.util.List;
 public class SetupActivity extends Activity {
 
     static final String EXTRA_MANUAL = "manual"; // 从主界面回来（换地址），禁止自动跳转
+    private static final int REQ_SCAN = 2001;
 
     private Storage storage;
     private ListView hostList;
@@ -119,12 +118,7 @@ public class SetupActivity extends Activity {
 
         scan.setOnClickListener(v -> {
             try {
-                new IntentIntegrator(this)
-                        .setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-                        .setPrompt(getString(R.string.scan_prompt))
-                        .setOrientationLocked(true)
-                        .setBeepEnabled(false)
-                        .initiateScan();
+                startActivityForResult(new Intent(this, ScanActivity.class), REQ_SCAN);
             } catch (Exception e) {
                 Toast.makeText(this, R.string.scan_failed, Toast.LENGTH_SHORT).show();
             }
@@ -182,11 +176,10 @@ public class SetupActivity extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == IntentIntegrator.REQUEST_CODE) {
-            IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-            if (result != null && result.getContents() != null) {
-                String url = result.getContents().trim();
-                if (UrlUtils.isUsable(url)) {
+        if (requestCode == REQ_SCAN) {
+            if (resultCode == RESULT_OK && data != null) {
+                String url = data.getStringExtra(ScanActivity.EXTRA_URL);
+                if (url != null && UrlUtils.isUsable(url)) {
                     Storage.SavedHost host = storage.upsertHost(url);
                     if (host != null) {
                         storage.setCurrentHost(host.id);
