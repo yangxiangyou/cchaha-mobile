@@ -19,8 +19,8 @@ android {
         minSdk 26
         targetSdk 34
         // 注意：每次发版必须同步递增 versionCode 和 versionName（v1.0.6 = code 6）
-        versionCode 8
-        versionName "1.0.8"
+        versionCode 9
+        versionName "1.0.9"
     }
 
     signingConfigs {
@@ -54,6 +54,14 @@ android {
     }
     testOptions {
         unitTests.returnDefaultValues = true
+    }
+
+    // APK 文件名带产品名和版本：cchaha-mobile-v1.0.9.apk
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            outputFileName = "cchaha-mobile-v${variant.versionName}" +
+                    (variant.buildType.name == "debug" ? "-debug" : "") + ".apk"
+        }
     }
 }
 
