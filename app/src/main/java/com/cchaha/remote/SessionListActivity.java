@@ -86,7 +86,16 @@ public class SessionListActivity extends Activity {
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
             SessionApi.SessionInfo s = adapter.getItem(position);
-            if (s != null) openMain(s.id, s.title);
+            if (s == null) return;
+            // 大会话走原生消息流（WebView 加载大会话会 120s 超时）
+            if (s.messageCount >= 1000) {
+                Intent i = new Intent(this, SessionMessagesActivity.class);
+                i.putExtra(SessionMessagesActivity.EXTRA_SESSION_ID, s.id);
+                i.putExtra(SessionMessagesActivity.EXTRA_SESSION_TITLE, s.title);
+                startActivity(i);
+            } else {
+                openMain(s.id, s.title);
+            }
         });
     }
 

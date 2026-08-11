@@ -36,4 +36,10 @@
     <string name="session_cached_at">Cached at %1$s</string>
     <string name="session_cached_stale">Server offline, showing cache (%1$s)</string>
     <string name="session_refresh_failed">Refresh failed — server not responding</string>
+    <string name="msg_loading">Loading messages… (large sessions take a few seconds)</string>
+    <string name="msg_updated">%1$d messages · updated</string>
+    <string name="msg_failed">Failed to load messages — check the server</string>
+    <string name="msg_sending">Sending…</string>
+    <string name="msg_sent">Sent, waiting for reply…</string>
+    <string name="msg_send_failed">Send failed — server not responding</string>
 </resources>

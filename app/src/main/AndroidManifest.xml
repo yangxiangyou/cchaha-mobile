@@ -43,6 +43,12 @@
             android:name=".SessionListActivity"
             android:exported="false" />
 
+        <!-- 原生消息流（大会话，避免 WebView 超时） -->
+        <activity
+            android:name=".SessionMessagesActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
         <!-- 扫码页（CameraX 自研） -->
         <activity
             android:name=".ScanActivity"
