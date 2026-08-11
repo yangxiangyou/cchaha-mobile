@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Haha Remote</string>
+    <string name="app_name">cchaha Mobile</string>
     <string name="setup_subtitle">Remote control for cc-haha desktop sessions</string>
     <string name="url_hint">Paste H5 link from your computer</string>
     <string name="action_connect">Connect</string>

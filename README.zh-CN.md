@@ -1,8 +1,10 @@
-# Haha Remote
+# cchaha Mobile
 
 **用手机遥控 [cc-haha](https://github.com/NanmiCoder/cc-haha) 桌面会话的 Android 应用。**
 
 出门在外也能继续电脑上的 cc-haha 会话：查看任务进度、补发指令、批准权限、上传文件——Codex 手机端式体验。电脑端应用保持运行，本应用只是一个遥控器。
+
+> **上游项目**：[cc-haha](https://github.com/NanmiCoder/cc-haha)（本应用遥控的桌面工作区）。应用图标与品牌形象取自 cc-haha，按其 [MIT 许可证](https://github.com/NanmiCoder/cc-haha/blob/main/LICENSE) 使用。
 
 ## 功能
 
@@ -59,15 +61,15 @@
 
 ## 安装
 
-从 [Releases](https://github.com/yangxiangyou/haha-remote/releases) 下载 APK 安装到手机（提示"允许安装未知应用"时允许即可）。要求 **Android 8.0+**。
+从 [Releases](https://github.com/yangxiangyou/cchaha-mobile/releases) 下载 APK 安装到手机（提示"允许安装未知应用"时允许即可）。要求 **Android 8.0+**。
 
 ## 从源码构建
 
 需要：JDK 17+、Android SDK（platform 34 / build-tools 34.0.0）、Gradle 8.9。
 
 ```bash
-git clone https://github.com/yangxiangyou/haha-remote.git
-cd haha-remote
+git clone https://github.com/yangxiangyou/cchaha-mobile.git
+cd cchaha-mobile
 echo "sdk.dir=/path/to/android-sdk" > local.properties   # 指向你的 SDK
 gradle test assembleDebug       # debug 包（可与正式版共存安装）
 gradle assembleRelease          # 正式包（需要 keystore.properties，见下）

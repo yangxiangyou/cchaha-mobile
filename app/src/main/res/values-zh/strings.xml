@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Haha Remote</string>
+    <string name="app_name">cchaha Mobile</string>
     <string name="setup_subtitle">cc-haha 桌面会话遥控</string>
     <string name="url_hint">粘贴电脑上的 H5 链接</string>
     <string name="action_connect">连接</string>

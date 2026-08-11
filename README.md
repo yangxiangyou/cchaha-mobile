@@ -1,8 +1,10 @@
-# Haha Remote
+# cchaha Mobile
 
 **Remote control for [cc-haha](https://github.com/NanmiCoder/cc-haha) desktop sessions — from your Android phone.**
 
 Continue your cc-haha session on the road: check task progress, send follow-up instructions, approve permissions, upload files — a Codex-style mobile experience. The desktop app stays on your computer; this app is just a remote control.
+
+> **Upstream**: [cc-haha](https://github.com/NanmiCoder/cc-haha) — the desktop workspace this app remote-controls. App icon and branding are from cc-haha, used under its [MIT License](https://github.com/NanmiCoder/cc-haha/blob/main/LICENSE).
 
 ## Features
 
@@ -59,15 +61,15 @@ No VPS, no domain: `cloudflared tunnel --url http://localhost:PORT` gives you a 
 
 ## Install
 
-Download the latest APK from the [Releases](https://github.com/yangxiangyou/haha-remote/releases) page and install it on your phone (allow "install unknown apps"). Requires **Android 8.0+**.
+Download the latest APK from the [Releases](https://github.com/yangxiangyou/cchaha-mobile/releases) page and install it on your phone (allow "install unknown apps"). Requires **Android 8.0+**.
 
 ## Build from source
 
 Requirements: JDK 17+, Android SDK (platform 34, build-tools 34.0.0), Gradle 8.9.
 
 ```bash
-git clone https://github.com/yangxiangyou/haha-remote.git
-cd haha-remote
+git clone https://github.com/yangxiangyou/cchaha-mobile.git
+cd cchaha-mobile
 echo "sdk.dir=/path/to/android-sdk" > local.properties
 gradle test assembleDebug       # debug APK (installs alongside release)
 gradle assembleRelease          # release APK (needs keystore.properties, see below)
