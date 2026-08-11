@@ -359,19 +359,20 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * 窄屏修复：cc-haha 页面底部操作条在 ≤380px 宽度下按钮互相重叠
-     * （gavel 审批按钮与模型选择器压在一起，点不到）。
-     * 注入 CSS 让工具条窄屏时自动换行 + 按钮可收缩。
-     * 用 style 标签注入而非改 DOM 样式——SPA 内部路由重建 DOM 后依然生效。
+     * 底部操作条防重叠修复：cc-haha 页面底部工具条（审批/模型选择/发送按钮）
+     * 在手机宽度下按钮互相重叠（gavel 与模型选择器压在一起，点不到）。
+     * 注入 CSS 让工具条"放不下就自动换行"——宽屏不受影响（本来就放得下），
+     * 窄屏（含 390dp+ 的现代手机）自动换行不再重叠。
+     * 之前限制 max-width:380px 导致 390dp 手机不生效，故去掉宽度限制。
+     * 用 style 标签注入——SPA 内部路由重建 DOM 后依然生效。
      */
     private void injectNarrowScreenFix() {
         if (webView == null) return;
         webView.evaluateJavascript(
                 "(function(){if(document.getElementById('haha-narrow-fix'))return;" +
                 "var s=document.createElement('style');s.id='haha-narrow-fix';" +
-                "s.textContent='@media (max-width:380px){" +
-                "[class*=\"justify-end\"][class*=\"gap-2\"]{flex-wrap:wrap!important;gap:4px!important;padding-bottom:6px!important;}" +
-                "[class*=\"justify-end\"][class*=\"gap-2\"]>*{min-width:0!important;flex-shrink:1!important;}'}';" +
+                "s.textContent='[class*=\"justify-end\"][class*=\"gap-2\"]{flex-wrap:wrap!important;gap:4px!important;padding-bottom:6px!important;}" +
+                "[class*=\"justify-end\"][class*=\"gap-2\"]>*{min-width:0!important;flex-shrink:1!important;}';" +
                 "document.head.appendChild(s);})();", null);
     }
 
