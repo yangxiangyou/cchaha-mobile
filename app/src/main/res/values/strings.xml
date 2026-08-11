@@ -18,7 +18,7 @@
     <string name="webview_recovered">Browser engine recovered after a crash</string>
     <string name="download_failed">Cannot open download link</string>
     <string name="err_cant_connect">Cannot reach your computer</string>
-    <string name="err_check_hint">Check:\n① Is cc-haha running on the computer?\n② Are phone and computer on the same Wi-Fi?\n③ Is H5 Access still enabled?</string>
+    <string name="err_check_hint">Check:\n① Is cc-haha running on the computer?\n② Is the address correct? (LAN: same Wi-Fi; remote: public URL or tunnel)\n③ Is H5 Access still enabled?</string>
     <string name="err_tap_refresh">Tap refresh above to retry</string>
     <string name="setup_hint">How to get the address:\n1. Open cc-haha desktop app on your computer\n2. Settings → H5 Access → enable “Enable H5 access”\n3. Tap “Generate token” — a QR code appears on screen\n4. Tap “Scan QR” below to scan it, or tap “Copy launch URL” and paste it above\n\nTap an address to connect; long-press to rename or delete.\nNote: phone and computer must be on the same Wi-Fi. The link contains a token — treat it like a password.</string>
 </resources>

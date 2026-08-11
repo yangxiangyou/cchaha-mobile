@@ -96,6 +96,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        CrashCatcher.install(this);
         Window w = getWindow();
         w.setStatusBarColor(0xFF111418);
         w.setNavigationBarColor(0xFF111418);
@@ -444,6 +445,18 @@ public class MainActivity extends Activity {
                 loadUrl(host.url);
             }
         }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        CrashCatcher.trackActivity(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        CrashCatcher.untrackActivity(this);
     }
 
     @Override

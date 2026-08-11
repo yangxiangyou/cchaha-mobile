@@ -40,6 +40,7 @@ public class SetupActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        CrashCatcher.install(this);
         Window w = getWindow();
         w.setStatusBarColor(0xFF111418);
         w.setNavigationBarColor(0xFF111418);
@@ -133,6 +134,18 @@ public class SetupActivity extends Activity {
     private void startMain() {
         startActivity(new Intent(this, MainActivity.class));
         finish();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        CrashCatcher.trackActivity(this);
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        CrashCatcher.untrackActivity(this);
     }
 
     /** 长按菜单：重命名 / 删除 */
