@@ -49,6 +49,8 @@ public class SessionMessagesActivity extends Activity {
     private EditText inputBox;
     private MessageAdapter adapter;
     private boolean loading = false;
+    private boolean visible = true;   // Activity 是否在前台
+    private int lastMessageCount = 0; // 上次消息数（用于新回复检测）
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +71,13 @@ public class SessionMessagesActivity extends Activity {
         Button send = findViewById(R.id.msg_send);
         Button refresh = findViewById(R.id.msg_refresh);
         TextView title = findViewById(R.id.msg_title);
+        androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe =
+                findViewById(R.id.msg_swipe);
+        swipe.setColorSchemeColors(0xFF4DA3FF);
+        swipe.setOnRefreshListener(() -> {
+            loadMessages();
+            mainHandler.postDelayed(() -> swipe.setRefreshing(false), 4000);
+        });
 
         title.setText(sessionTitle != null && !sessionTitle.isEmpty() ? sessionTitle : "会话");
 
@@ -124,6 +133,11 @@ public class SessionMessagesActivity extends Activity {
             try {
                 List<SessionApi.Message> messages = SessionApi.fetchMessages(url, tk, sid);
                 mainHandler.post(() -> {
+                    // 新回复检测：消息变多且界面不在前台 → 通知
+                    if (lastMessageCount > 0 && messages.size() > lastMessageCount && !visible) {
+                        notifyNewReply(messages.size() - lastMessageCount);
+                    }
+                    lastMessageCount = messages.size();
                     adapter.refresh(messages);
                     statusText.setText(getString(R.string.msg_updated, messages.size()));
                     messageList.setSelection(messages.size() - 1); // 滚到底部
@@ -137,6 +151,39 @@ public class SessionMessagesActivity extends Activity {
                 loading = false;
             }
         });
+    }
+
+    /** 新回复通知（界面不在前台时） */
+    private void notifyNewReply(int count) {
+        try {
+            android.app.NotificationManager nm =
+                    (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+            if (nm == null) return;
+            android.app.Notification.Builder b = new android.app.Notification.Builder(this)
+                    .setSmallIcon(android.R.drawable.ic_dialog_email)
+                    .setContentTitle(sessionTitle != null ? sessionTitle : "会话")
+                    .setContentText("收到 " + count + " 条新消息")
+                    .setAutoCancel(true);
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                android.app.NotificationChannel ch = new android.app.NotificationChannel(
+                        "replies", "会话回复", android.app.NotificationManager.IMPORTANCE_DEFAULT);
+                nm.createNotificationChannel(ch);
+                b.setChannelId("replies");
+            }
+            nm.notify((int) (System.currentTimeMillis() % 100000), b.build());
+        } catch (Exception ignored) { }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        visible = true;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        visible = false;
     }
 
     @Override
@@ -182,12 +229,33 @@ public class SessionMessagesActivity extends Activity {
 
             boolean isUser = "user".equals(m.type);
             bubble.setBackgroundResource(isUser ? R.drawable.bubble_user : R.drawable.bubble_assistant);
-            bubble.setText(m.text);
+            bubble.setText(buildStyledText(m.text));
 
             String time = m.timestampMs > 0
                     ? new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(m.timestampMs)) : "";
             meta.setText((isUser ? "我" : "Claude") + " · " + time);
             return v;
+        }
+
+        /** 代码块（```...```）用等宽字体 + 深色背景 */
+        private CharSequence buildStyledText(String text) {
+            if (text == null || !text.contains("```")) return text;
+            android.text.SpannableString sp = new android.text.SpannableString(text);
+            int start = 0;
+            while (true) {
+                int i = text.indexOf("```", start);
+                if (i < 0) break;
+                int j = text.indexOf("```", i + 3);
+                if (j < 0) break;
+                int codeStart = i;
+                int codeEnd = j + 3;
+                sp.setSpan(new android.text.style.TypefaceSpan("monospace"),
+                        codeStart, codeEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                sp.setSpan(new android.text.style.BackgroundColorSpan(0xFF0D1117),
+                        codeStart, codeEnd, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                start = j + 3;
+            }
+            return sp;
         }
     }
 }

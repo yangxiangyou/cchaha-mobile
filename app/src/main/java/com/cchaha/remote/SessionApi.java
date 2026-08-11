@@ -117,6 +117,10 @@ public final class SessionApi {
                         else if ("tool_use".equals(ct)) sb.append("[工具] ");
                         else if ("tool_result".equals(ct)) sb.append("[结果] ");
                         sb.append(txt).append("\n");
+                    } else if ("image".equals(ct) || "image_url".equals(ct)) {
+                        sb.append("[图片]\n");
+                    } else if ("file".equals(ct) || "attachment".equals(ct)) {
+                        sb.append("[文件]\n");
                     }
                 }
             }

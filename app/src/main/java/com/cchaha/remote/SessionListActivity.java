@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -41,6 +42,7 @@ public class SessionListActivity extends Activity {
     private SessionAdapter adapter;
     private String baseUrl = "";
     private String token = "";
+    private List<SessionApi.SessionInfo> allSessions = new ArrayList<>(); // 全量（供搜索过滤）
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +60,10 @@ public class SessionListActivity extends Activity {
         Button refresh = findViewById(R.id.session_refresh);
         Button newSession = findViewById(R.id.session_new);
         TextView title = findViewById(R.id.session_title);
+        EditText searchBox = findViewById(R.id.session_search);
+        androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe =
+                findViewById(R.id.session_swipe);
+        swipe.setColorSchemeColors(0xFF4DA3FF);
 
         Storage.SavedHost host = storage.getCurrentHost();
         if (host != null) {
@@ -70,6 +76,7 @@ public class SessionListActivity extends Activity {
 
         // 1. 秒开：先显示缓存
         List<SessionApi.SessionInfo> cached = cache.load();
+        allSessions = new ArrayList<>(cached);
         adapter = new SessionAdapter(cached);
         listView.setAdapter(adapter);
         if (cached.isEmpty()) {
@@ -82,7 +89,33 @@ public class SessionListActivity extends Activity {
         refreshSessions();
 
         refresh.setOnClickListener(v -> refreshSessions());
+        swipe.setOnRefreshListener(() -> {
+            refreshSessions();
+            mainHandler.postDelayed(() -> swipe.setRefreshing(false), 3000);
+        });
         newSession.setOnClickListener(v -> openMain(null, null));
+
+        // 搜索过滤
+        searchBox.addTextChangedListener(new android.text.TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void onTextChanged(CharSequence s, int a, int b, int c) { }
+            @Override public void afterTextChanged(android.text.Editable s) {
+                String q = s.toString().trim().toLowerCase();
+                List<SessionApi.SessionInfo> filtered = new ArrayList<>();
+                for (SessionApi.SessionInfo item : allSessions) {
+                    if (q.isEmpty()
+                            || (item.title != null && item.title.toLowerCase().contains(q))
+                            || (item.projectRoot != null && item.projectRoot.toLowerCase().contains(q))
+                            || (item.modelId != null && item.modelId.toLowerCase().contains(q))) {
+                        filtered.add(item);
+                    }
+                }
+                adapter.refresh(filtered);
+            }
+        });
+
+        // 自动更新检查（后台，失败静默）
+        AppUpdateChecker.check(this);
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
             SessionApi.SessionInfo s = adapter.getItem(position);
@@ -121,6 +154,7 @@ public class SessionListActivity extends Activity {
                 List<SessionApi.SessionInfo> sessions = SessionApi.fetchSessions(url, tk);
                 cache.save(sessions);
                 mainHandler.post(() -> {
+                    allSessions = new ArrayList<>(sessions);
                     adapter.refresh(sessions);
                     statusText.setText(getString(R.string.session_updated, fmtTime(System.currentTimeMillis())));
                 });

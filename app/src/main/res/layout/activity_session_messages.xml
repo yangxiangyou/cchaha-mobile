@@ -46,17 +46,22 @@
         android:textSize="12sp"
         android:textColor="#66707A" />
 
-    <!-- 消息列表 -->
-    <ListView
-        android:id="@+id/msg_list"
+    <!-- 消息列表（支持下拉刷新） -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/msg_swipe"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:divider="@null"
-        android:stackFromBottom="false"
-        android:transcriptMode="normal"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp" />
+        android:layout_weight="1">
+
+        <ListView
+            android:id="@+id/msg_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:divider="@null"
+            android:transcriptMode="normal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <!-- 输入区 -->
     <LinearLayout
