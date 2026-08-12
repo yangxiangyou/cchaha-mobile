@@ -24,7 +24,12 @@ public final class MessageCache {
     private final File dir;
 
     public MessageCache(Context context) {
-        dir = new File(context.getFilesDir(), DIR);
+        this(new File(context.getFilesDir(), DIR));
+    }
+
+    /** 测试用：指定缓存目录 */
+    MessageCache(File dir) {
+        this.dir = dir;
     }
 
     /** 读取某会话的缓存消息 JSON；无缓存返回 null */
