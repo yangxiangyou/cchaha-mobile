@@ -10,8 +10,16 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * cc-haha H5 API 客户端（原生会话列表用）。
@@ -21,6 +29,38 @@ public final class SessionApi {
 
     private static final String TAG = "SessionApi";
     private static final int TIMEOUT_MS = 20000;
+
+    /** 全信任 TLS 单例：局域网/隧道场景证书可能与访问地址主机名不匹配（域名证书经 IP 访问） */
+    private static volatile SSLSocketFactory trustAllFactory;
+
+    /**
+     * 对 HTTPS 连接应用 App 级信任：跳过证书 CA 校验与主机名校验。
+     * 该 App 只连用户自配的 H5 地址（私网/隧道自签证书场景），与 WebView 的放行策略一致。
+     */
+    private static void applyTrust(HttpURLConnection conn) {
+        if (!(conn instanceof HttpsURLConnection)) return;
+        try {
+            HttpsURLConnection hc = (HttpsURLConnection) conn;
+            if (trustAllFactory == null) {
+                synchronized (SessionApi.class) {
+                    if (trustAllFactory == null) {
+                        TrustManager[] trustAll = { new X509TrustManager() {
+                            @Override public void checkClientTrusted(X509Certificate[] chain, String authType) { }
+                            @Override public void checkServerTrusted(X509Certificate[] chain, String authType) { }
+                            @Override public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+                        } };
+                        SSLContext ctx = SSLContext.getInstance("TLS");
+                        ctx.init(null, trustAll, new SecureRandom());
+                        trustAllFactory = ctx.getSocketFactory();
+                    }
+                }
+            }
+            hc.setSSLSocketFactory(trustAllFactory);
+            hc.setHostnameVerifier((hostname, session) -> true);
+        } catch (Exception e) {
+            Log.w(TAG, "applyTrust failed", e);
+        }
+    }
 
     /** 一个会话的摘要 */
     public static class SessionInfo {
@@ -62,6 +102,7 @@ public final class SessionApi {
         String referer = baseUrl + "/?token=" + token;
         HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
         try {
+            applyTrust(conn);
             conn.setConnectTimeout(TIMEOUT_MS);
             conn.setReadTimeout(TIMEOUT_MS);
             conn.setRequestMethod("GET");
@@ -158,6 +199,7 @@ public final class SessionApi {
         String urlStr = baseUrl + "/api/sessions/" + sessionId + "/messages";
         HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
         try {
+            applyTrust(conn);
             conn.setConnectTimeout(TIMEOUT_MS);
             conn.setReadTimeout(120000); // 大会话需要更久
             conn.setRequestMethod("GET");
@@ -197,6 +239,7 @@ public final class SessionApi {
         String urlStr = baseUrl + "/api/sessions";
         HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
         try {
+            applyTrust(conn);
             conn.setConnectTimeout(30000);
             conn.setReadTimeout(60000); // 创建可能较慢（初始化工作区）
             conn.setRequestMethod("POST");
@@ -256,6 +299,7 @@ public final class SessionApi {
             String urlStr = baseUrl + "/api/sessions/" + sessionId + "/chat";
             HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
             try {
+                applyTrust(conn);
                 conn.setConnectTimeout(10000);
                 conn.setReadTimeout(30000);
                 conn.setRequestMethod("POST");
@@ -286,6 +330,7 @@ public final class SessionApi {
             String urlStr = baseUrl + "/api/status";
             HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
             try {
+                applyTrust(conn);
                 conn.setConnectTimeout(8000);
                 conn.setReadTimeout(8000);
                 conn.setRequestMethod("GET");
