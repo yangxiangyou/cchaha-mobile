@@ -15,6 +15,7 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -103,31 +104,15 @@ public class SetupActivity extends Activity {
                 Toast.makeText(this, R.string.enter_url_first, Toast.LENGTH_SHORT).show();
                 return;
             }
-            String normalized = UrlUtils.normalize(url);
+            // 地址一行 + token 一行：拼接（兼容粘贴完整链接）
+            String normalized = buildConnectUrl(url, tokenInput.getText().toString().trim());
             if (normalized == null) {
-                Toast.makeText(this, R.string.invalid_url, Toast.LENGTH_SHORT).show();
-                return;
-            }
-            // 地址一行 + token 一行：地址未含 token 时用 token 框拼接
-            // （兼容粘贴完整链接：已含 ?token= 则原样使用）
-            if (!normalized.contains("?token=")) {
-                String token = tokenInput.getText().toString().trim();
-                if (token.isEmpty()) {
+                if (UrlUtils.normalize(url) == null) {
+                    Toast.makeText(this, R.string.invalid_url, Toast.LENGTH_SHORT).show();
+                } else {
                     Toast.makeText(this, R.string.token_required, Toast.LENGTH_SHORT).show();
-                    return;
                 }
-                int q = normalized.indexOf('?');
-                String base = q > 0 ? normalized.substring(0, q) : normalized;
-                while (base.endsWith("/")) base = base.substring(0, base.length() - 1);
-                String encoded;
-                try {
-                    encoded = java.net.URLEncoder.encode(token, "UTF-8");
-                } catch (Exception e) {
-                    encoded = token;
-                }
-                // 地址已有 query 参数时保留原参数，追加 &token=
-                normalized = q > 0 ? base + normalized.substring(q) + "&token=" + encoded
-                                   : base + "/?token=" + encoded;
+                return;
             }
             Storage.SavedHost host = storage.upsertHost(normalized);
             if (host != null) {
@@ -170,20 +155,106 @@ public class SetupActivity extends Activity {
         CrashCatcher.untrackActivity(this);
     }
 
-    /** 长按菜单：重命名 / 删除 */
+    /** 长按菜单：编辑 / 重命名 / 删除 */
     private void showHostActions(Storage.SavedHost host) {
-        String[] actions = {getString(R.string.action_rename), getString(R.string.action_delete)};
+        String[] actions = {getString(R.string.action_edit), getString(R.string.action_rename),
+                getString(R.string.action_delete)};
         new AlertDialog.Builder(this)
                 .setTitle(host.name)
                 .setItems(actions, (d, which) -> {
-                    if (which == 0) showRenameDialog(host);
-                    else if (which == 1) {
+                    if (which == 0) showEditDialog(host);
+                    else if (which == 1) showRenameDialog(host);
+                    else if (which == 2) {
                         storage.removeHost(host.id);
                         adapter.refresh(storage.getHosts());
                         Toast.makeText(this, R.string.host_deleted, Toast.LENGTH_SHORT).show();
                     }
                 })
                 .show();
+    }
+
+    /** 编辑设备：名称 / 地址 / token 三字段（地址或 token 填错时修正，无需删除重加） */
+    private void showEditDialog(Storage.SavedHost host) {
+        // 解析现有 URL：base 与 token（URL 内为编码形式，回填时解码还原）
+        String base = host.url;
+        String token = "";
+        int q = host.url.indexOf('?');
+        if (q > 0) base = host.url.substring(0, q);
+        int i = host.url.indexOf("token=");
+        if (i >= 0) {
+            String rest = host.url.substring(i + 6);
+            int j = rest.indexOf('&');
+            String raw = j > 0 ? rest.substring(0, j) : rest;
+            try { token = java.net.URLDecoder.decode(raw, "UTF-8"); } catch (Exception ignored) { }
+        }
+
+        EditText nameInput = new EditText(this);
+        nameInput.setSingleLine(true);
+        nameInput.setHint(R.string.action_rename);
+        nameInput.setText(host.name);
+        EditText urlInput2 = new EditText(this);
+        urlInput2.setSingleLine(true);
+        urlInput2.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
+        urlInput2.setHint(R.string.url_hint);
+        urlInput2.setText(base);
+        EditText tokenInput = new EditText(this);
+        tokenInput.setSingleLine(true);
+        tokenInput.setHint(R.string.token_hint);
+        tokenInput.setText(token);
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(24, 8, 24, 0);
+        layout.addView(nameInput);
+        layout.addView(urlInput2);
+        layout.addView(tokenInput);
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.action_edit)
+                .setView(layout)
+                .setPositiveButton(android.R.string.ok, (d, w) -> {
+                    String newName = nameInput.getText().toString().trim();
+                    String newUrl = buildConnectUrl(urlInput2.getText().toString().trim(),
+                            tokenInput.getText().toString().trim());
+                    if (newUrl == null) {
+                        Toast.makeText(this, R.string.invalid_url, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    Storage.SavedHost updated = storage.upsertHost(newUrl);
+                    if (updated != null) {
+                        if (!updated.id.equals(host.id)) {
+                            // URL 变化产生新条目：删除旧条目
+                            storage.removeHost(host.id);
+                            storage.setCurrentHost(updated.id);
+                        } else if (!newName.isEmpty()) {
+                            storage.renameHost(updated.id, newName);
+                        }
+                        adapter.refresh(storage.getHosts());
+                        Toast.makeText(this, R.string.host_updated, Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    /** 按地址 + token 拼连接 URL；非法输入返回 null */
+    private String buildConnectUrl(String urlText, String tokenText) {
+        String normalized = UrlUtils.normalize(urlText);
+        if (normalized == null) return null;
+        if (normalized.contains("?token=")) return normalized; // 完整链接粘贴
+        String token = tokenText.trim();
+        if (token.isEmpty()) return null;
+        int q = normalized.indexOf('?');
+        String base = q > 0 ? normalized.substring(0, q) : normalized;
+        while (base.endsWith("/")) base = base.substring(0, base.length() - 1);
+        String encoded;
+        try {
+            encoded = java.net.URLEncoder.encode(token, "UTF-8");
+        } catch (Exception e) {
+            encoded = token;
+        }
+        return q > 0 ? base + normalized.substring(q) + "&token=" + encoded
+                     : base + "/?token=" + encoded;
     }
 
     private void showRenameDialog(Storage.SavedHost host) {

@@ -8,6 +8,8 @@
     <string name="action_connect">连接</string>
     <string name="action_scan">📷 扫码连接</string>
     <string name="action_rename">重命名</string>
+    <string name="action_edit">编辑</string>
+    <string name="host_updated">设备已更新</string>
     <string name="action_delete">删除</string>
     <string name="current_badge">当前</string>
     <string name="host_deleted">地址已删除</string>
