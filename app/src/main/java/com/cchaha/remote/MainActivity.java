@@ -500,12 +500,18 @@ public class MainActivity extends Activity {
     }
 
     private void showErrorPage() {
+        // 品牌化错误页：朱红品牌字 + 检查清单（对齐 cc-haha 视觉语言）
         String html = "<html><body style='background:#111418;color:#9aa5b1;"
                 + "font-family:sans-serif;display:flex;align-items:center;justify-content:center;"
-                + "height:100vh;text-align:center;margin:0'>"
-                + "<div><h2 style='color:#e6e6e6'>" + getString(R.string.err_cant_connect) + "</h2>"
-                + "<p>" + getString(R.string.err_check_hint) + "</p>"
-                + "<p style='color:#4da3ff'>" + getString(R.string.err_tap_refresh) + "</p></div></body></html>";
+                + "height:100vh;text-align:center;margin:0;padding:24px;box-sizing:border-box'>"
+                + "<div style='max-width:340px'>"
+                + "<div style='color:#96442b;font-size:13px;letter-spacing:2px;font-weight:bold'>CCHAHA MOBILE</div>"
+                + "<h2 style='color:#e6e6e6;margin:14px 0 8px;font-size:19px'>"
+                + getString(R.string.err_cant_connect) + "</h2>"
+                + "<p style='font-size:13px;line-height:1.9;text-align:left'>"
+                + getString(R.string.err_check_hint) + "</p>"
+                + "<div style='margin-top:22px;color:#96442b;font-size:13px'>"
+                + getString(R.string.err_tap_refresh) + "</div></div></body></html>";
         webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
     }
 
