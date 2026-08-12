@@ -61,7 +61,10 @@ public final class CryptoStore {
     /** 加密并 Base64 编码：base64(iv + ciphertext) */
     public String encrypt(String plain) {
         if (plain == null) return null;
-        if (key == null) return plain; // 降级：明文（记录日志）
+        if (key == null) {
+            Log.w(TAG, "keystore unavailable — storing plaintext (degraded)");
+            return plain; // 降级：明文
+        }
         try {
             Cipher cipher = Cipher.getInstance(TRANSFORM);
             cipher.init(Cipher.ENCRYPT_MODE, key);

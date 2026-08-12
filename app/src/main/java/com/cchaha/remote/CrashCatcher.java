@@ -117,14 +117,16 @@ public final class CrashCatcher {
         } catch (Exception ignored) { }
     }
 
-    /** 前台 Activity 跟踪（避免引入 Application 生命周期依赖） */
+    /** 前台 Activity 跟踪（弱引用，避免长期持有阻止回收） */
     private static final class TopActivityHolder {
-        private static volatile Activity top;
+        private static volatile java.lang.ref.WeakReference<Activity> top =
+                new java.lang.ref.WeakReference<>(null);
 
-        static void set(Activity a) { top = a; }
+        static void set(Activity a) { top = new java.lang.ref.WeakReference<>(a); }
         static void clear(Activity a) {
-            if (top == a) top = null;
+            Activity cur = top.get();
+            if (cur == a) top = new java.lang.ref.WeakReference<>(null);
         }
-        static Activity get() { return top; }
+        static Activity get() { return top.get(); }
     }
 }

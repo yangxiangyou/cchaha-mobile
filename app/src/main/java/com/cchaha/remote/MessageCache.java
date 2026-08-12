@@ -40,11 +40,17 @@ public final class MessageCache {
         return null;
     }
 
-    /** 写入某会话的消息 JSON，并顺带清理超出上限的最旧文件 */
+    /** 写入某会话的消息 JSON，并顺带清理超出上限的最旧文件（原子写：先 .tmp 再 rename） */
     public void save(String sessionId, String json) {
         try {
             if (!dir.exists()) dir.mkdirs();
-            Files.write(fileFor(sessionId).toPath(), json.getBytes(StandardCharsets.UTF_8));
+            File target = fileFor(sessionId);
+            File tmp = new File(dir, target.getName() + ".tmp");
+            Files.write(tmp.toPath(), json.getBytes(StandardCharsets.UTF_8));
+            if (!tmp.renameTo(target)) {
+                tmp.delete();
+                Files.write(target.toPath(), json.getBytes(StandardCharsets.UTF_8));
+            }
             prune();
         } catch (Exception e) {
             Log.w(TAG, "save failed for " + sessionId, e);

@@ -38,6 +38,30 @@ public final class AppUpdateChecker {
 
     private AppUpdateChecker() { }
 
+    /** 语义化版本比较：a > b 返回正数，相等 0，小于负数（非数字段按 0） */
+    static int compareVersions(String a, String b) {
+        String[] pa = a.split("\\.");
+        String[] pb = b.split("\\.");
+        int n = Math.max(pa.length, pb.length);
+        for (int i = 0; i < n; i++) {
+            int x = i < pa.length ? parseIntSafe(pa[i]) : 0;
+            int y = i < pb.length ? parseIntSafe(pb[i]) : 0;
+            if (x != y) return Integer.compare(x, y);
+        }
+        return 0;
+    }
+
+    private static int parseIntSafe(String s) {
+        // 去掉非数字后缀（如 "1.4.10-beta" → 10）
+        String num = s.replaceAll("[^0-9].*$", "");
+        if (num.isEmpty()) return 0;
+        try {
+            return Integer.parseInt(num);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     /** 后台检查，有新版本弹提示 */
     public static void check(final Context context) {
         executor.execute(() -> {
@@ -83,11 +107,15 @@ public final class AppUpdateChecker {
                 String current = context.getPackageManager()
                         .getPackageInfo(context.getPackageName(), 0).versionName;
                 if (latest.startsWith("v")) latest = latest.substring(1);
-                if (latest.isEmpty() || latest.equals(current)) return;
+                if (latest.isEmpty() || compareVersions(latest, current) <= 0) return;
 
                 final String fLatest = latest, fBody = body, fUrl = url;
-                new android.os.Handler(android.os.Looper.getMainLooper()).post(() ->
-                        showDialog(context, fLatest, fBody, fUrl));
+                final Context appCtx = context.getApplicationContext();
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    if (context instanceof android.app.Activity
+                            && ((android.app.Activity) context).isFinishing()) return;
+                    showDialog(appCtx, fLatest, fBody, fUrl);
+                });
             } catch (Exception e) {
                 Log.w(TAG, "update check failed", e);
             }

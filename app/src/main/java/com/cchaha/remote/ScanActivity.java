@@ -102,6 +102,7 @@ public class ScanActivity extends ComponentActivity {
     @SuppressLint("UnsafeOptInUsageError")
     private void startCamera() {
         ProcessCameraProvider.getInstance(this).addListener(() -> {
+            if (isFinishing() || isDestroyed()) return;
             try {
                 ProcessCameraProvider provider = ProcessCameraProvider.getInstance(this).get();
 
@@ -119,7 +120,10 @@ public class ScanActivity extends ComponentActivity {
             } catch (Exception e) {
                 Log.e(TAG, "camera start failed", e);
                 // 显示具体原因（相机被占用/设备无相机/初始化失败），便于定位
-                runOnUiThread(() -> showCameraErrorDialog(e));
+                runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    showCameraErrorDialog(e);
+                });
             }
         }, ContextCompat.getMainExecutor(this));
     }

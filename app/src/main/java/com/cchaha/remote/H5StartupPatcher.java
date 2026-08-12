@@ -9,7 +9,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -37,9 +37,29 @@ public final class H5StartupPatcher {
     private static final String PATCH_REPLACEMENT =
             "function renderStartupError(reason) { return; // cchaha-mobile: suppress\n";
     private static final int TIMEOUT_MS = 15000;
-    private static final Map<String, String> cache = new ConcurrentHashMap<>();
+    /** 有界 LRU 缓存（按 origin+path 键，去 token；上限 8，防内存无限增长） */
+    private static final Map<String, String> cache = new LinkedHashMap<String, String>(8, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+            return size() > 8;
+        }
+    };
 
     private H5StartupPatcher() { }
+
+    /** 缓存键：origin + path（去 token 与参数，HTML 与 token 无关） */
+    private static String cacheKey(String url) {
+        try {
+            java.net.URI uri = java.net.URI.create(url);
+            String scheme = uri.getScheme() != null ? uri.getScheme() : "";
+            String host = uri.getHost() != null ? uri.getHost() : "";
+            int port = uri.getPort();
+            String path = uri.getPath() != null ? uri.getPath() : "/";
+            return scheme + "://" + host + (port > 0 ? ":" + port : "") + path;
+        } catch (Exception e) {
+            return url;
+        }
+    }
 
     /** 替换 HTML 中的看门狗渲染函数（幂等） */
     static String patch(String html) {
@@ -49,8 +69,11 @@ public final class H5StartupPatcher {
 
     /** 拉取主文档 HTML 并打补丁（应在后台线程调用）；失败返回 null */
     public static String fetchPatched(String url) {
-        String cached = cache.get(url);
-        if (cached != null) return cached;
+        String key = cacheKey(url);
+        synchronized (cache) {
+            String cached = cache.get(key);
+            if (cached != null) return cached;
+        }
         try {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             try {
@@ -70,7 +93,9 @@ public final class H5StartupPatcher {
                 }
                 String html = patch(sb.toString());
                 if (!html.contains("renderStartupError")) return null; // 非 H5 主文档，不缓存
-                cache.put(url, html);
+                synchronized (cache) {
+                    cache.put(key, html);
+                }
                 return html;
             } finally {
                 conn.disconnect();

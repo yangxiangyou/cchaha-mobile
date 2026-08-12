@@ -47,6 +47,15 @@ public final class UrlUtils {
         if (authority.contains(":")) {
             // 去掉端口（IPv6 用 [] 包裹，[] 保留在 hostPart 里做宽松匹配）
             hostPart = authority.substring(0, authority.lastIndexOf(':'));
+            // 端口必须是 1-65535 的数字（"host:abc"、":99999" 非法）
+            String port = authority.substring(authority.lastIndexOf(':') + 1);
+            if (!port.matches("\\d{1,5}")) return false;
+            try {
+                int p = Integer.parseInt(port);
+                if (p < 1 || p > 65535) return false;
+            } catch (NumberFormatException e) {
+                return false;
+            }
         }
         if (hostPart.isEmpty()) return false;
         if (!hostPart.matches(HOST_RE)) return false;

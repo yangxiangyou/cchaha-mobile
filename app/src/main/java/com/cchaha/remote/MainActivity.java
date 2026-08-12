@@ -2,6 +2,8 @@ package com.cchaha.remote;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+
+import java.util.List;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -204,12 +206,13 @@ public class MainActivity extends Activity {
         if (pendingSessionId == null || webView == null) return;
         String target = pendingSessionTitle != null ? pendingSessionTitle : pendingSessionId;
         if (target.length() > 24) target = target.substring(0, 24);
-        final String match = target.replace("'", "\\'");
-        final String sid = pendingSessionId;
+        // 转义为 JS 字符串字面量（防会话名注入脚本）
+        final String match = org.json.JSONObject.quote(target);
+        final String sid = org.json.JSONObject.quote(pendingSessionId);
         pendingSessionId = null;
         pendingSessionTitle = null;
         webView.evaluateJavascript(
-                "(function(){var target='" + match + "',sid='" + sid + "',steps=0;" +
+                "(function(){var target=" + match + ",sid=" + sid + ",steps=0;" +
                 "var t=setInterval(function(){steps++;" +
                 "if(!window.__hahaPicked){var pk=[...document.querySelectorAll('button')].find(function(b){return /选择项目/.test(b.textContent||'')});" +
                 "if(pk){pk.click();window.__hahaPicked=true;}}" +
@@ -217,6 +220,26 @@ public class MainActivity extends Activity {
                 "var x=(e.textContent||'').trim();return x.length>4&&x.length<80&&(x.indexOf(target.slice(0,12))>=0||target.indexOf(x.slice(0,10))>=0);});" +
                 "if(it){it.click();clearInterval(t);}" +
                 "if(steps>40)clearInterval(t);},1000);})();", null);
+    }
+
+    /** 主机是否在已保存主机列表（SSL 放行与页面拦截白名单用） */
+    private boolean isAllowedHost(String url) {
+        try {
+            String host = android.net.Uri.parse(url).getHost();
+            if (host == null || host.isEmpty()) return false;
+            if (currentUrl != null && !currentUrl.isEmpty()) {
+                String cur = android.net.Uri.parse(currentUrl).getHost();
+                if (host.equalsIgnoreCase(cur)) return true;
+            }
+            List<Storage.SavedHost> hosts = new Storage(this).getHosts();
+            for (Storage.SavedHost h : hosts) {
+                String hh = android.net.Uri.parse(h.url).getHost();
+                if (hh != null && hh.equalsIgnoreCase(host)) return true;
+            }
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /** 新建 WebView（可被 render 崩溃后重建复用） */
@@ -252,10 +275,11 @@ public class MainActivity extends Activity {
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                // 主文档 HTML 打补丁：屏蔽 H5 8 秒启动看门狗错误页（手机加载慢会闪错）
+                // 主文档 HTML 打补丁：屏蔽 H5 8 秒启动看门狗错误页（仅对已保存主机）
                 if (request != null && request.isForMainFrame()
                         && ("http".equalsIgnoreCase(request.getUrl().getScheme())
-                            || "https".equalsIgnoreCase(request.getUrl().getScheme()))) {
+                            || "https".equalsIgnoreCase(request.getUrl().getScheme()))
+                        && isAllowedHost(request.getUrl().toString())) {
                     String patched = H5StartupPatcher.fetchPatched(request.getUrl().toString());
                     if (patched != null) {
                         return new WebResourceResponse("text/html", "UTF-8",
@@ -280,7 +304,10 @@ public class MainActivity extends Activity {
                 errorState = false;
                 mainFrameFailCount = 0;
                 setConnState(ConnState.CONNECTED);
-                urlInput.setText(url);
+                // 仅回填真实 http(s) URL（错误页等 data: URL 不回填）
+                if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+                    urlInput.setText(url);
+                }
                 refreshButtons();
                 injectNarrowScreenFix();
                 openSessionDrawer();
@@ -312,8 +339,12 @@ public class MainActivity extends Activity {
             @Override
             public void onReceivedSslError(WebView view, android.webkit.SslErrorHandler handler,
                                            android.net.http.SslError error) {
-                // 局域网自签证书场景：允许继续（信任网络内使用）
-                handler.proceed();
+                // 仅对已保存主机放行（局域网/隧道自签证书场景）；其他主机拒绝
+                if (error != null && error.getUrl() != null && isAllowedHost(error.getUrl())) {
+                    handler.proceed();
+                } else {
+                    handler.cancel();
+                }
             }
 
             // WebView 渲染进程崩溃（内存压力/系统杀进程）：重建而不白屏
@@ -559,6 +590,11 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        // 文件选择器未返回时置空回调，防止悬挂导致后续上传卡死
+        if (filePathCallback != null) {
+            filePathCallback.onReceiveValue(null);
+            filePathCallback = null;
+        }
         try { unregisterReceiver(screenReceiver); } catch (Exception ignored) { }
         if (networkCallback != null) {
             try {

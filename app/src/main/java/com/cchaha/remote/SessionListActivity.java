@@ -140,7 +140,8 @@ public class SessionListActivity extends Activity {
 
     /** 后台预热 H5（不 attach 到界面）：加载完整页面写入磁盘缓存，进 WebView 时提速 */
     private void prewarmH5() {
-        if (prewarmWebView != null || baseUrl.isEmpty() || token.isEmpty()) return;
+        if (isFinishing() || isDestroyed() || prewarmWebView != null
+                || baseUrl.isEmpty() || token.isEmpty()) return;
         try {
             WebView wv = new WebView(this);
             prewarmWebView = wv;
@@ -239,7 +240,9 @@ public class SessionListActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        executor.shutdown();
+        // 清理全部挂起回调（含预热延迟），防止销毁后触碰 UI/创建 WebView
+        mainHandler.removeCallbacksAndMessages(null);
+        executor.shutdownNow();
         if (prewarmWebView != null) {
             try { prewarmWebView.destroy(); } catch (Exception ignored) { }
             prewarmWebView = null;

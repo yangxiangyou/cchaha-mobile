@@ -47,6 +47,17 @@ public class UrlUtilsTest {
     }
 
     @Test
+    public void isUsable_rejectsBadPorts() {
+        assertTrue(UrlUtils.isUsable("http://host:8080"));
+        assertTrue(UrlUtils.isUsable("http://host:1"));
+        assertTrue(UrlUtils.isUsable("http://host:65535"));
+        assertFalse(UrlUtils.isUsable("http://host:abc"));   // 非数字端口
+        assertFalse(UrlUtils.isUsable("http://host:99999")); // 超范围
+        assertFalse(UrlUtils.isUsable("http://host:0"));     // 0 非法
+        assertFalse(UrlUtils.isUsable("http://host:"));      // 空端口
+    }
+
+    @Test
     public void extractLabel_handlesIpAndDomain() {
         assertEquals("192.168.1.20", UrlUtils.extractLabel("http://192.168.1.20:8080"));
         assertEquals("my-pc", UrlUtils.extractLabel("http://my-pc.local:8080"));

@@ -55,7 +55,9 @@ public final class Storage {
             if (enc == null || enc.isEmpty()) return;
             String json = crypto.decrypt(enc);
             if (json == null) {
-                Log.w(TAG, "hosts decrypt failed, clearing");
+                // 解密失败（密钥变化/数据损坏）：清除坏数据，避免每次启动重复失败
+                Log.w(TAG, "hosts decrypt failed, clearing corrupted data");
+                prefs.edit().remove(KEY_HOSTS_ENC).apply();
                 return;
             }
             JSONArray arr = new JSONArray(json);

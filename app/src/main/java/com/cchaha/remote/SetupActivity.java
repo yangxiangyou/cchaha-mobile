@@ -120,7 +120,15 @@ public class SetupActivity extends Activity {
                 int q = normalized.indexOf('?');
                 String base = q > 0 ? normalized.substring(0, q) : normalized;
                 while (base.endsWith("/")) base = base.substring(0, base.length() - 1);
-                normalized = base + "/?token=" + token;
+                String encoded;
+                try {
+                    encoded = java.net.URLEncoder.encode(token, "UTF-8");
+                } catch (Exception e) {
+                    encoded = token;
+                }
+                // 地址已有 query 参数时保留原参数，追加 &token=
+                normalized = q > 0 ? base + normalized.substring(q) + "&token=" + encoded
+                                   : base + "/?token=" + encoded;
             }
             Storage.SavedHost host = storage.upsertHost(normalized);
             if (host != null) {

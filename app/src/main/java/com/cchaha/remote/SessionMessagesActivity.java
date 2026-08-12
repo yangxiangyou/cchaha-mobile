@@ -50,7 +50,7 @@ public class SessionMessagesActivity extends Activity {
     private EditText inputBox;
     private MessageAdapter adapter;
     private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe;
-    private boolean loading = false;
+    private volatile boolean loading = false; // 跨线程可见，防重复拉取
     private boolean visible = true;   // Activity 是否在前台
     private int lastMessageCount = 0; // 上次消息数（用于新回复检测）
 
@@ -188,37 +188,44 @@ public class SessionMessagesActivity extends Activity {
             statusText.setText(R.string.msg_loading);
         }
         final String url = baseUrl, tk = token, sid = sessionId;
-        executor.execute(() -> {
-            try {
-                String json = SessionApi.fetchMessagesJson(url, tk, sid);
-                messageCache.save(sid, json);
-                List<SessionApi.Message> messages = SessionApi.parseMessages(json);
-                mainHandler.post(() -> {
-                    // 新回复检测：消息变多且界面不在前台 → 通知
-                    if (lastMessageCount > 0 && messages.size() > lastMessageCount && !visible) {
-                        notifyNewReply(messages.size() - lastMessageCount);
-                    }
-                    lastMessageCount = messages.size();
-                    adapter.refresh(messages);
-                    statusText.setText(getString(R.string.msg_updated, messages.size()));
-                    if (messages.size() > 0) messageList.setSelection(messages.size() - 1); // 滚到底部
-                    swipe.setRefreshing(false); // 完成即收尾
-                });
-            } catch (Exception e) {
-                mainHandler.post(() -> {
-                    if (adapter.getCount() == 0) {
-                        statusText.setText(R.string.msg_failed);
-                        Toast.makeText(this, R.string.msg_failed, Toast.LENGTH_SHORT).show();
-                    } else {
-                        // 有缓存：保留缓存内容，只提示刷新失败
-                        statusText.setText(R.string.msg_refresh_failed_keep);
-                    }
-                    swipe.setRefreshing(false);
-                });
-            } finally {
-                loading = false;
-            }
-        });
+        try {
+            executor.execute(() -> {
+                try {
+                    String json = SessionApi.fetchMessagesJson(url, tk, sid);
+                    messageCache.save(sid, json);
+                    List<SessionApi.Message> messages = SessionApi.parseMessages(json);
+                    mainHandler.post(() -> {
+                        if (isFinishing() || isDestroyed()) return;
+                        // 新回复检测：消息变多且界面不在前台 → 通知
+                        if (lastMessageCount > 0 && messages.size() > lastMessageCount && !visible) {
+                            notifyNewReply(messages.size() - lastMessageCount);
+                        }
+                        lastMessageCount = messages.size();
+                        adapter.refresh(messages);
+                        statusText.setText(getString(R.string.msg_updated, messages.size()));
+                        if (messages.size() > 0) messageList.setSelection(messages.size() - 1); // 滚到底部
+                        swipe.setRefreshing(false); // 完成即收尾
+                        loading = false;
+                    });
+                } catch (Exception e) {
+                    mainHandler.post(() -> {
+                        if (isFinishing() || isDestroyed()) return;
+                        if (adapter.getCount() == 0) {
+                            statusText.setText(R.string.msg_failed);
+                            Toast.makeText(this, R.string.msg_failed, Toast.LENGTH_SHORT).show();
+                        } else {
+                            // 有缓存：保留缓存内容，只提示刷新失败
+                            statusText.setText(R.string.msg_refresh_failed_keep);
+                        }
+                        swipe.setRefreshing(false);
+                        loading = false;
+                    });
+                }
+            });
+        } catch (java.util.concurrent.RejectedExecutionException e) {
+            // Activity 已销毁，线程池已关闭：静默
+            loading = false;
+        }
     }
 
     /** 新回复通知（界面不在前台时）：固定 key 按会话复用更新，点击回到会话 */
@@ -230,7 +237,7 @@ public class SessionMessagesActivity extends Activity {
             Intent intent = new Intent(this, SessionMessagesActivity.class);
             intent.putExtra(EXTRA_SESSION_ID, sessionId);
             intent.putExtra(EXTRA_SESSION_TITLE, sessionTitle);
-            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             android.app.PendingIntent pi = android.app.PendingIntent.getActivity(
                     this, 0, intent,
                     android.app.PendingIntent.FLAG_UPDATE_CURRENT
@@ -270,9 +277,28 @@ public class SessionMessagesActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        mainHandler.removeCallbacks(pollRunnable);
-        executor.shutdown();
+        // 清理全部挂起回调（轮询/发送后延迟刷新/加载回调），防止销毁后触碰 UI
+        mainHandler.removeCallbacksAndMessages(null);
+        executor.shutdownNow();
         super.onDestroy();
+    }
+
+    /** 通知点击/单实例复用：重读会话参数并重新加载（支持从通知切换到其他会话） */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        String newId = intent.getStringExtra(EXTRA_SESSION_ID);
+        String newTitle = intent.getStringExtra(EXTRA_SESSION_TITLE);
+        if (newId == null || newId.isEmpty() || newId.equals(sessionId)) return;
+        sessionId = newId;
+        sessionTitle = newTitle != null ? newTitle : "";
+        TextView title = findViewById(R.id.msg_title);
+        if (title != null) title.setText(sessionTitle.isEmpty() ? "会话" : sessionTitle);
+        lastMessageCount = 0;
+        adapter.refresh(new ArrayList<>());
+        statusText.setText(R.string.msg_loading);
+        loadMessages();
     }
 
     /** 消息适配器：user 右对齐，其他左对齐；块级渲染（思考折叠/工具卡片/结果折叠） */
@@ -388,11 +414,18 @@ public class SessionMessagesActivity extends Activity {
             return sp;
         }
 
-        /** 长文本折叠：超过 maxLen 截断并提示点击展开 */
+        /** 长文本折叠：超过 maxLen 截断并提示点击展开（按 code point 截断，不切 emoji 代理对） */
         private String fold(String text, boolean expanded, int maxLen) {
             if (text == null) return "";
             if (expanded || text.length() <= maxLen) return text;
-            return text.substring(0, maxLen) + "…（点击展开）";
+            try {
+                int cps = text.codePointCount(0, text.length());
+                int cut = Math.min(maxLen, cps);
+                int end = text.offsetByCodePoints(0, cut);
+                return text.substring(0, end) + "…（点击展开）";
+            } catch (IndexOutOfBoundsException e) {
+                return text.substring(0, maxLen) + "…（点击展开）";
+            }
         }
 
         /** 代码块（```...```）用等宽字体 + 深色背景 */
