@@ -132,16 +132,17 @@ public final class AppUpdateChecker {
     private static void showDialog(Context context, String version, String body, String url) {
         String notes = body != null && body.length() > 300 ? body.substring(0, 300) + "…" : body;
         new AlertDialog.Builder(context)
-                .setTitle("发现新版本 v" + version)
-                .setMessage(notes == null || notes.isEmpty() ? "有新版本可用" : notes)
-                .setPositiveButton("去下载", (d, w) -> {
+                .setTitle(context.getString(R.string.update_available_title, version))
+                .setMessage(notes == null || notes.isEmpty()
+                        ? context.getString(R.string.update_available_msg) : notes)
+                .setPositiveButton(R.string.update_go, (d, w) -> {
                     if (url != null && !url.isEmpty()) {
                         try {
                             context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
                         } catch (Exception ignored) { }
                     }
                 })
-                .setNegativeButton("稍后", null)
+                .setNegativeButton(R.string.update_later, null)
                 .show();
     }
 }

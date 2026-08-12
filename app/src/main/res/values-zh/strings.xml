@@ -70,4 +70,25 @@
     <string name="crash_desc">请复制下面的错误信息发给开发者，方便定位问题。</string>
     <string name="crash_copy">复制错误信息</string>
     <string name="crash_retry">返回重试</string>
+    <string name="session_search_hint">搜索会话…</string>
+    <string name="msg_default_title">会话</string>
+    <string name="msg_reply_notification">收到 %1$d 条新消息</string>
+    <string name="msg_channel_name">会话回复</string>
+    <string name="msg_who_me">我</string>
+    <string name="msg_who_ai">Claude</string>
+    <string name="tag_thinking">思考</string>
+    <string name="tag_tool">工具</string>
+    <string name="render_thinking">[思考] </string>
+    <string name="render_result">[结果] </string>
+    <string name="session_no_project">未指定项目</string>
+    <string name="msg_message_count">%1$d 条</string>
+    <string name="time_just_now">刚刚</string>
+    <string name="time_min_ago">%1$d 分钟前</string>
+    <string name="time_hour_ago">%1$d 小时前</string>
+    <string name="time_day_ago">%1$d 天前</string>
+    <string name="crash_copied">已复制，可以粘贴发给开发者</string>
+    <string name="update_available_title">发现新版本 v%1$s</string>
+    <string name="update_available_msg">有新版本可用</string>
+    <string name="update_go">去下载</string>
+    <string name="update_later">稍后</string>
 </resources>

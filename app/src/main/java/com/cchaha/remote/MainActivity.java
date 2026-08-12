@@ -172,8 +172,13 @@ public class MainActivity extends Activity {
             return;
         }
 
+        // 消息页"完整版"进入：优先加载消息页所属设备（通知跨设备场景不串设备）
+        String hostUrl = getIntent().getStringExtra(SessionMessagesActivity.EXTRA_HOST_URL);
+        String hostToken = getIntent().getStringExtra(SessionMessagesActivity.EXTRA_HOST_TOKEN);
         Storage.SavedHost current = storage.getCurrentHost();
-        if (current != null) {
+        if (hostUrl != null && !hostUrl.isEmpty()) {
+            loadUrl(joinHostUrl(hostUrl, hostToken));
+        } else if (current != null) {
             loadUrl(current.url);
         } else {
             // 没地址：去连接页
@@ -182,6 +187,15 @@ public class MainActivity extends Activity {
             startActivity(i);
             finish();
         }
+    }
+
+    /** baseUrl + token 拼完整加载 URL（token 空则原样地址） */
+    private static String joinHostUrl(String base, String token) {
+        if (token == null || token.isEmpty()) return base;
+        String enc;
+        try { enc = java.net.URLEncoder.encode(token, "UTF-8"); }
+        catch (Exception e) { enc = token; }
+        return base + "/?token=" + enc;
     }
 
     /**

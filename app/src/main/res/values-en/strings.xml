@@ -70,4 +70,25 @@ This address has not been saved. Connect anyway? (It will not be saved.)</string
     <string name="crash_desc">Please copy the error info below and send it to the developer.</string>
     <string name="crash_copy">Copy error info</string>
     <string name="crash_retry">Back and retry</string>
+    <string name="session_search_hint">Search sessions…</string>
+    <string name="msg_default_title">Session</string>
+    <string name="msg_reply_notification">%1$d new message(s)</string>
+    <string name="msg_channel_name">Session replies</string>
+    <string name="msg_who_me">Me</string>
+    <string name="msg_who_ai">Claude</string>
+    <string name="tag_thinking">thinking</string>
+    <string name="tag_tool">tool</string>
+    <string name="render_thinking">[thinking] </string>
+    <string name="render_result">[result] </string>
+    <string name="session_no_project">No project</string>
+    <string name="msg_message_count">%1$d msgs</string>
+    <string name="time_just_now">just now</string>
+    <string name="time_min_ago">%1$d min ago</string>
+    <string name="time_hour_ago">%1$d h ago</string>
+    <string name="time_day_ago">%1$d d ago</string>
+    <string name="crash_copied">Copied — paste it to the developer</string>
+    <string name="update_available_title">New version v%1$s available</string>
+    <string name="update_available_msg">A new version is available</string>
+    <string name="update_go">Get it</string>
+    <string name="update_later">Later</string>
 </resources>

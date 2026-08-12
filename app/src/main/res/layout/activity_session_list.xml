@@ -56,7 +56,7 @@
         android:singleLine="true"
         android:drawableStart="@drawable/ic_search"
         android:drawablePadding="8dp"
-        android:hint="搜索会话…" />
+        android:hint="@string/session_search_hint" />
 
     <!-- 状态行 -->
     <TextView

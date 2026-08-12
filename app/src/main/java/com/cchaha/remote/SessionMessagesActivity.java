@@ -34,13 +34,15 @@ public class SessionMessagesActivity extends Activity {
 
     static final String EXTRA_SESSION_ID = "session_id";
     static final String EXTRA_SESSION_TITLE = "session_title";
+    /** 通知携带所属设备的地址/token：点通知回到发出通知的那台设备，避免串设备 */
+    static final String EXTRA_HOST_URL = "host_url";
+    static final String EXTRA_HOST_TOKEN = "host_token";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     // 发送独立线程：避免被大会话 120s 拉取阻塞
     private final ExecutorService sendExecutor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    private Storage storage;
     private MessageCache messageCache;
     private String baseUrl = "";
     private String token = "";
@@ -104,14 +106,23 @@ public class SessionMessagesActivity extends Activity {
             requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1);
         }
 
-        title.setText(sessionTitle != null && !sessionTitle.isEmpty() ? sessionTitle : "会话");
+        title.setText(sessionTitle != null && !sessionTitle.isEmpty()
+                ? sessionTitle : getString(R.string.msg_default_title));
 
-        Storage.SavedHost host = new Storage(this).getCurrentHost();
-        if (host != null) {
-            String url = host.url;
-            baseUrl = UrlUtils.trimTrailingSlash(url.contains("?")
-                    ? url.substring(0, url.indexOf('?')) : url);
-            token = UrlUtils.extractToken(url);
+        // 优先用通知携带的设备地址（点通知回到发出通知的那台电脑）；否则当前设备
+        String hostUrl = getIntent().getStringExtra(EXTRA_HOST_URL);
+        String hostToken = getIntent().getStringExtra(EXTRA_HOST_TOKEN);
+        if (hostUrl != null && !hostUrl.isEmpty()) {
+            baseUrl = UrlUtils.trimTrailingSlash(hostUrl);
+            token = hostToken == null ? "" : hostToken;
+        } else {
+            Storage.SavedHost host = new Storage(this).getCurrentHost();
+            if (host != null) {
+                String url = host.url;
+                baseUrl = UrlUtils.trimTrailingSlash(url.contains("?")
+                        ? url.substring(0, url.indexOf('?')) : url);
+                token = UrlUtils.extractToken(url);
+            }
         }
 
         adapter = new MessageAdapter();
@@ -148,13 +159,16 @@ public class SessionMessagesActivity extends Activity {
 
         refresh.setOnClickListener(v -> loadMessages());
 
-        // 兜底入口：切 WebView 完整版（权限批准/附件等原生未覆盖功能）
+        // 兜底入口：切 WebView 完整版（权限批准/附件等原生未覆盖功能）；
+        // 带设备信息：通知进入的跨设备会话切完整版时仍定位到原设备
         full.setOnClickListener(v -> {
             Intent i = new Intent(this, MainActivity.class);
             if (!sessionId.isEmpty()) i.putExtra(MainActivity.EXTRA_OPEN_SESSION, sessionId);
             if (sessionTitle != null && !sessionTitle.isEmpty()) {
                 i.putExtra(MainActivity.EXTRA_SESSION_TITLE, sessionTitle);
             }
+            i.putExtra(EXTRA_HOST_URL, baseUrl);
+            i.putExtra(EXTRA_HOST_TOKEN, token);
             startActivity(i);
         });
 
@@ -269,6 +283,8 @@ public class SessionMessagesActivity extends Activity {
             Intent intent = new Intent(this, SessionMessagesActivity.class);
             intent.putExtra(EXTRA_SESSION_ID, sessionId);
             intent.putExtra(EXTRA_SESSION_TITLE, sessionTitle);
+            intent.putExtra(EXTRA_HOST_URL, baseUrl);
+            intent.putExtra(EXTRA_HOST_TOKEN, token);
             intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             // requestCode 按会话区分：不同会话的通知点击互不串扰
             int reqCode = sessionId == null ? 0 : sessionId.hashCode();
@@ -278,13 +294,14 @@ public class SessionMessagesActivity extends Activity {
                             | android.app.PendingIntent.FLAG_IMMUTABLE);
             android.app.Notification.Builder b = new android.app.Notification.Builder(this)
                     .setSmallIcon(R.drawable.ic_stat_reply)
-                    .setContentTitle(sessionTitle != null ? sessionTitle : "会话")
-                    .setContentText("收到 " + count + " 条新消息")
+                    .setContentTitle(sessionTitle != null ? sessionTitle : getString(R.string.msg_default_title))
+                    .setContentText(getString(R.string.msg_reply_notification, count))
                     .setAutoCancel(true)
                     .setContentIntent(pi);
             if (android.os.Build.VERSION.SDK_INT >= 26) {
                 android.app.NotificationChannel ch = new android.app.NotificationChannel(
-                        "replies", "会话回复", android.app.NotificationManager.IMPORTANCE_DEFAULT);
+                        "replies", getString(R.string.msg_channel_name),
+                        android.app.NotificationManager.IMPORTANCE_DEFAULT);
                 nm.createNotificationChannel(ch);
                 b.setChannelId("replies");
             }
@@ -318,18 +335,28 @@ public class SessionMessagesActivity extends Activity {
         super.onDestroy();
     }
 
-    /** 通知点击/单实例复用：重读会话参数并重新加载（支持从通知切换到其他会话） */
+    /** 通知点击/单实例复用：重读会话参数并重新加载（支持从通知切换到其他会话/设备） */
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
         String newId = intent.getStringExtra(EXTRA_SESSION_ID);
         String newTitle = intent.getStringExtra(EXTRA_SESSION_TITLE);
-        if (newId == null || newId.isEmpty() || newId.equals(sessionId)) return;
+        // 通知来自其他设备：先切换 baseUrl/token，再拉新会话（sid 校验防旧结果覆盖）
+        String hostUrl = intent.getStringExtra(EXTRA_HOST_URL);
+        String hostToken = intent.getStringExtra(EXTRA_HOST_TOKEN);
+        boolean hostChanged = hostUrl != null && !hostUrl.isEmpty()
+                && !hostUrl.equals(UrlUtils.trimTrailingSlash(baseUrl));
+        if (hostChanged) {
+            baseUrl = UrlUtils.trimTrailingSlash(hostUrl);
+            token = hostToken == null ? "" : hostToken;
+        }
+        if (newId == null || newId.isEmpty() || (newId.equals(sessionId) && !hostChanged)) return;
         sessionId = newId;
         sessionTitle = newTitle != null ? newTitle : "";
         TextView title = findViewById(R.id.msg_title);
-        if (title != null) title.setText(sessionTitle.isEmpty() ? "会话" : sessionTitle);
+        if (title != null) title.setText(sessionTitle.isEmpty()
+                ? getString(R.string.msg_default_title) : sessionTitle);
         lastMessageCount = 0;
         adapter.expandedIds.clear(); // 折叠状态不跨会话残留
         loading = false;             // 释放旧会话的拉取锁，立即拉新会话
@@ -422,10 +449,10 @@ public class SessionMessagesActivity extends Activity {
             // 类型标签：思考/工具（辅助阅读长消息）
             String tag = "";
             for (SessionApi.Block b : m.blocks) {
-                if ("thinking".equals(b.type)) { tag = "思考"; break; }
-                if ("tool_use".equals(b.type)) { tag = "工具"; break; }
+                if ("thinking".equals(b.type)) { tag = getString(R.string.tag_thinking); break; }
+                if ("tool_use".equals(b.type)) { tag = getString(R.string.tag_tool); break; }
             }
-            String who = isUser ? "我" : "Claude";
+            String who = isUser ? getString(R.string.msg_who_me) : getString(R.string.msg_who_ai);
             h.meta.setText(who + (tag.isEmpty() ? "" : " · " + tag) + " · " + time);
             return convertView;
         }
@@ -461,7 +488,7 @@ public class SessionMessagesActivity extends Activity {
                 } else if ("thinking".equals(type)) {
                     String txt = fold(b.text, expanded, 120);
                     int start = sp.length();
-                    sp.append("[思考] ").append(txt);
+                    sp.append(getString(R.string.render_thinking)).append(txt);
                     sp.setSpan(new android.text.style.ForegroundColorSpan(0xFF8A94A0), start, sp.length(),
                             android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     sp.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.ITALIC), start, sp.length(),
@@ -480,7 +507,7 @@ public class SessionMessagesActivity extends Activity {
                 } else if ("tool_result".equals(type)) {
                     String txt = fold(b.text, expanded, 120);
                     int start = sp.length();
-                    sp.append("[结果] ").append(txt);
+                    sp.append(getString(R.string.render_result)).append(txt);
                     sp.setSpan(new android.text.style.ForegroundColorSpan(0xFF8A94A0), start, sp.length(),
                             android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 } else if ("image".equals(type) || "image_url".equals(type)) {

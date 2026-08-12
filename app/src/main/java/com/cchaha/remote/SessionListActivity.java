@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,9 +13,6 @@ import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,8 +44,6 @@ public class SessionListActivity extends Activity {
     private TextView statusText;
     private SessionAdapter adapter;
     private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe;
-    private WebView prewarmWebView; // 预热 WebView（防 GC）
-    private Runnable prewarmRunnable; // 预热延迟句柄（onStop 取消用）
     private String baseUrl = "";
     private String token = "";
     private List<SessionApi.SessionInfo> allSessions = new ArrayList<>(); // 全量（供搜索过滤）
@@ -121,77 +115,15 @@ public class SessionListActivity extends Activity {
         // 自动更新检查（后台，失败静默）
         AppUpdateChecker.check(this);
 
-        // WebView 预热：H5 首页经 frp 隧道很慢（实测 20s+），提前加载写磁盘缓存，
-        // 之后进完整版时同 URL 命中缓存，黑屏时间大幅缩短
-        prewarmRunnable = this::prewarmH5;
-        mainHandler.postDelayed(prewarmRunnable, 1000);
-
         listView.setOnItemClickListener((parent, view, position, id) -> {
             SessionApi.SessionInfo s = adapter.getItem(position);
             if (s == null) return;
-            // 全面原生路线：所有会话一律进原生消息页（秒开，缓存先行）；
-            // WebView 仅保留为兜底入口（完整版按钮）
+            // 全面原生路线：所有会话一律进原生消息页（秒开，缓存先行）
             Intent i = new Intent(this, SessionMessagesActivity.class);
             i.putExtra(SessionMessagesActivity.EXTRA_SESSION_ID, s.id);
             i.putExtra(SessionMessagesActivity.EXTRA_SESSION_TITLE, s.title);
             startActivity(i);
         });
-    }
-
-    /** 后台预热 H5（不 attach 到界面）：加载完整页面写入磁盘缓存，进 WebView 时提速 */
-    private void prewarmH5() {
-        if (isFinishing() || isDestroyed() || prewarmWebView != null
-                || baseUrl.isEmpty() || token.isEmpty()) return;
-        try {
-            WebView wv = new WebView(this);
-            prewarmWebView = wv;
-            WebSettings s = wv.getSettings();
-            s.setJavaScriptEnabled(true);
-            s.setDomStorageEnabled(true);
-            s.setCacheMode(WebSettings.LOAD_DEFAULT);
-            wv.setWebViewClient(new WebViewClient() {
-                @Override
-                public void onPageFinished(WebView view, String url) {
-                    // 预热完成即释放（磁盘缓存已写入，下次同 URL 加载命中缓存）
-                    try { view.destroy(); } catch (Exception ignored) { }
-                    if (prewarmWebView == view) prewarmWebView = null;
-                }
-
-                @Override
-                public boolean onRenderProcessGone(WebView view,
-                                                   android.webkit.RenderProcessGoneDetail detail) {
-                    // 预热失败静默，不影响主进程
-                    if (prewarmWebView == view) prewarmWebView = null;
-                    return true;
-                }
-            });
-            wv.loadUrl(buildFullUrl());
-        } catch (Exception e) {
-            Log.w("SessionList", "prewarm failed", e);
-            prewarmWebView = null;
-        }
-    }
-
-    /** 拼完整加载 URL（token 编码；无 token 时用原样地址，避免拼出 "?token=" 空参数） */
-    private String buildFullUrl() {
-        if (baseUrl.isEmpty()) return "";
-        if (token.isEmpty()) return baseUrl;
-        String enc;
-        try { enc = java.net.URLEncoder.encode(token, "UTF-8"); }
-        catch (Exception e) { enc = token; }
-        return baseUrl + "/?token=" + enc;
-    }
-
-    /** 离开列表页即停止预热：避免与 MainActivity 同时加载同一 host（带宽翻倍） */
-    @Override
-    protected void onStop() {
-        super.onStop();
-        // 取消尚未执行的预热延迟，并销毁已创建的预热 WebView
-        if (prewarmRunnable != null) mainHandler.removeCallbacks(prewarmRunnable);
-        if (prewarmWebView != null) {
-            try { prewarmWebView.destroy(); } catch (Exception ignored) { }
-            prewarmWebView = null;
-        }
     }
 
     /** singleTop 复用：换设备后重读当前主机并刷新（避免旧实例残留旧设备数据） */
@@ -279,13 +211,9 @@ public class SessionListActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        // 清理全部挂起回调（含预热延迟），防止销毁后触碰 UI/创建 WebView
+        // 清理全部挂起回调，防止销毁后触碰 UI
         mainHandler.removeCallbacksAndMessages(null);
         executor.shutdownNow();
-        if (prewarmWebView != null) {
-            try { prewarmWebView.destroy(); } catch (Exception ignored) { }
-            prewarmWebView = null;
-        }
         super.onDestroy();
     }
 
@@ -333,9 +261,9 @@ public class SessionListActivity extends Activity {
             String project = s.projectRoot;
             if (project != null && project.length() > 30) project = "…" + project.substring(project.length() - 30);
             String model = (s.modelId != null && !s.modelId.isEmpty()) ? s.modelId : "";
-            meta.setText((project != null && !project.isEmpty() ? project : "未指定项目")
+            meta.setText((project != null && !project.isEmpty() ? project : getString(R.string.session_no_project))
                     + (model.isEmpty() ? "" : " · " + model)
-                    + " · " + s.messageCount + " 条");
+                    + " · " + getString(R.string.msg_message_count, s.messageCount));
             time.setText(relTime(s.modifiedAtMs));
             return v;
         }
@@ -344,12 +272,12 @@ public class SessionListActivity extends Activity {
             if (ms <= 0) return "";
             long diff = System.currentTimeMillis() - ms;
             long min = diff / 60000;
-            if (min < 1) return "刚刚";
-            if (min < 60) return min + " 分钟前";
+            if (min < 1) return getString(R.string.time_just_now);
+            if (min < 60) return getString(R.string.time_min_ago, min);
             long h = min / 60;
-            if (h < 24) return h + " 小时前";
+            if (h < 24) return getString(R.string.time_hour_ago, h);
             long d = h / 24;
-            if (d < 7) return d + " 天前";
+            if (d < 7) return getString(R.string.time_day_ago, d);
             return new SimpleDateFormat("MM-dd", Locale.getDefault()).format(new Date(ms));
         }
     }

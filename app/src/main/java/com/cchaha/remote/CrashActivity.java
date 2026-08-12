@@ -39,7 +39,7 @@ public class CrashActivity extends Activity {
         copy.setOnClickListener(v -> {
             ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             cm.setPrimaryClip(ClipData.newPlainText("crash", text.getText().toString()));
-            Toast.makeText(this, "已复制，可以粘贴发给开发者", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.crash_copied, Toast.LENGTH_SHORT).show();
         });
 
         retry.setOnClickListener(v -> {

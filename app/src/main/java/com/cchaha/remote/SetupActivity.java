@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.LayoutInflater;
@@ -61,20 +60,10 @@ public class SetupActivity extends Activity {
 
         boolean manual = getIntent().getBooleanExtra(EXTRA_MANUAL, false);
 
-        // 深链唤起（浏览器点 H5 链接）：直接加入并连接
-        Uri data = getIntent().getData();
-        if (data != null && UrlUtils.isUsable(data.toString())) {
-            Storage.SavedHost host = storage.upsertHost(data.toString());
-            if (host != null) {
-                storage.setCurrentHost(host.id);
-                startSessionList();
-                return;
-            }
-        }
-
-        // 冷启动且有当前地址：直接进原生会话列表；从主界面回来则显示列表
+        // 冷启动且有当前设备：直接进入 cc-haha 主界面（与"点击设备直接进入"心智一致）；
+        // 从主界面回来（manual）则显示设备列表
         if (!manual && storage.getCurrentHost() != null) {
-            startSessionList();
+            startMain();
             return;
         }
 
@@ -134,14 +123,9 @@ public class SetupActivity extends Activity {
     }
 
     private void startMain() {
-        // 点击设备/添加设备 → 直接进入 cc-haha 主界面（H5 完整版）；
+        // 点击设备/添加设备/冷启动 → 直接进入 cc-haha 主界面（H5 完整版）；
         // 想用原生会话列表可从主界面首页按钮进入
         startActivity(new Intent(this, MainActivity.class));
-        finish();
-    }
-
-    private void startSessionList() {
-        startActivity(new Intent(this, SessionListActivity.class));
         finish();
     }
 
