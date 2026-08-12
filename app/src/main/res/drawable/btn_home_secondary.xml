@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 首页次按钮：浅朱底 + 朱红边框（cc-haha 品牌浅色） -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/cc_brand_soft" />
+    <corners android:radius="999dp" />
+    <stroke android:width="1dp" android:color="@color/cc_brand" />
+</shape>

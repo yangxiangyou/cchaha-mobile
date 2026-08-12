@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- cc-haha 原版品牌 Logo（BrandSeal xl）：
+     双 C 墨色描边 + 朱红一笔/光标/星火。
+     几何忠实还原上游 BrandSeal.tsx（viewBox 252 306 519 423 平移至原点）。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="98dp"
+    android:height="80dp"
+    android:viewportWidth="519"
+    android:viewportHeight="423">
+
+    <!-- 双 C：墨色描边 -->
+    <path
+        android:pathData="M185.75 389.01A131 131 0 1 1 185.75 130.99"
+        android:strokeColor="#1F1F1F"
+        android:strokeWidth="60"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M253.06 229.98A117 117 0 0 1 358.92 153.07"
+        android:strokeColor="#1F1F1F"
+        android:strokeWidth="58"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+    <path
+        android:pathData="M383.32 385.22A117 117 0 0 1 263.78 332.00"
+        android:strokeColor="#1F1F1F"
+        android:strokeWidth="58"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <!-- 朱红一笔（横杠） -->
+    <path
+        android:pathData="M189.5 270H265.5"
+        android:strokeColor="#96442B"
+        android:strokeWidth="35"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000" />
+
+    <!-- 光标（朱红） -->
+    <path
+        android:pathData="M431.79 78.80Q446.00 74.00 440.43 87.93L413.57 155.07Q408.00 169.00 403.71 154.63L393.00 118.71Q391.00 112.00 384.59 109.18L377.25 105.95Q366.00 101.00 379.26 96.52L431.79 78.80Z"
+        android:fillColor="#96442B" />
+
+    <!-- 星火（朱红） -->
+    <path
+        android:pathData="M465.00 2.00Q472.07 19.43 489.50 26.50Q472.07 33.57 465.00 51.00Q457.93 33.57 440.50 26.50Q457.93 19.43 465.00 2.00Z"
+        android:fillColor="#96442B" />
+    <path
+        android:pathData="M503.50 59.00Q507.04 68.96 517.00 72.50Q507.04 76.04 503.50 86.00Q499.96 76.04 490.00 72.50Q499.96 68.96 503.50 59.00Z"
+        android:fillColor="#96442B" />
+</vector>

@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 首页主机条目：浅色卡片（对齐原版大圆角） -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingTop="12dp"
-    android:paddingBottom="12dp"
-    android:paddingStart="4dp"
-    android:paddingEnd="4dp">
+    android:layout_marginTop="8dp"
+    android:background="@drawable/bg_host_card"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="14dp"
+    android:paddingBottom="14dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -19,8 +22,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textColor="#E6E6E6"
+            android:textColor="@color/cc_ink"
             android:textSize="15sp"
+            android:textStyle="bold"
             android:singleLine="true"
             android:ellipsize="end" />
 
@@ -29,8 +33,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/current_badge"
-            android:textColor="#3DDC84"
+            android:textColor="@color/cc_brand"
             android:textSize="11sp"
+            android:background="@drawable/bg_host_current"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
             android:visibility="gone" />
     </LinearLayout>
 
@@ -38,8 +47,8 @@
         android:id="@+id/host_url"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:textColor="#66707A"
+        android:layout_marginTop="3dp"
+        android:textColor="@color/cc_secondary"
         android:textSize="12sp"
         android:singleLine="true"
         android:ellipsize="middle" />

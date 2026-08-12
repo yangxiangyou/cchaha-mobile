@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- cc-haha 原版色板（上游 globals.css 实测值） -->
+    <color name="cc_bg">#FFFFFF</color>
+    <color name="cc_ink">#1F1F1F</color>
+    <color name="cc_secondary">#66707A</color>
+    <color name="cc_brand">#96442B</color>
+    <color name="cc_brand_soft">#F6ECE5</color>
+    <color name="cc_border">#E7E4DE</color>
+    <color name="cc_surface">#FAF9F6</color>
+    <color name="cc_hint">#9AA0A6</color>
+
+    <!-- 现有深色界面色（列表页/消息页/主界面沿用） -->
+    <color name="dark_bg">#111418</color>
+    <color name="accent_blue">#4DA3FF</color>
+</resources>

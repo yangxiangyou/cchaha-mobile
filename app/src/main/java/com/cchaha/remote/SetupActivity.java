@@ -42,8 +42,12 @@ public class SetupActivity extends Activity {
         super.onCreate(savedInstanceState);
         CrashCatcher.install(this);
         Window w = getWindow();
-        w.setStatusBarColor(0xFF111418);
-        w.setNavigationBarColor(0xFF111418);
+        // 浅色首页：白底 + 深色状态栏图标（对齐 cc-haha 原版浅色风格）
+        w.setStatusBarColor(0xFFFFFFFF);
+        w.setNavigationBarColor(0xFFFFFFFF);
+        w.getDecorView().setSystemUiVisibility(
+                android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                        | android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         setContentView(R.layout.activity_setup);
 
         storage = new Storage(this);
@@ -80,7 +84,7 @@ public class SetupActivity extends Activity {
 
         hint.setText(R.string.setup_hint);
 
-        adapter = new HostAdapter(storage.getHosts());
+        adapter = new HostAdapter(storage, storage.getHosts());
         hostList.setAdapter(adapter);
 
         hostList.setOnItemClickListener((parent, view, position, id) -> {
@@ -226,9 +230,11 @@ public class SetupActivity extends Activity {
 
     /** 地址列表适配器 */
     private static class HostAdapter extends BaseAdapter {
+        private final Storage storage;
         private List<Storage.SavedHost> hosts;
 
-        HostAdapter(List<Storage.SavedHost> hosts) {
+        HostAdapter(Storage storage, List<Storage.SavedHost> hosts) {
+            this.storage = storage;
             this.hosts = hosts;
         }
 
@@ -266,7 +272,9 @@ public class SetupActivity extends Activity {
             TextView current = v.findViewById(R.id.host_current);
             name.setText(h.name);
             url.setText(h.url);
-            current.setVisibility(View.GONE);
+            // 当前主机标记（朱红小标签）
+            Storage.SavedHost cur = storage.getCurrentHost();
+            current.setVisibility(cur != null && cur.id.equals(h.id) ? View.VISIBLE : View.GONE);
             return v;
         }
     }
