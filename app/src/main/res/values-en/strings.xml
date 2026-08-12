@@ -40,6 +40,9 @@
     <string name="create_session_creating">Creating session…</string>
     <string name="create_session_new">New session</string>
     <string name="create_session_failed">Create failed — server not responding</string>
+    <string name="create_session_need_workdir">Create failed: please fill in a project path and retry (the server does not support empty paths)
+
+Tip: copy an existing project path from the session list</string>
     <string name="session_updated">Updated · %1$s</string>
     <string name="session_cached_at">Cached at %1$s</string>
     <string name="session_cached_stale">Server offline, showing cache (%1$s)</string>

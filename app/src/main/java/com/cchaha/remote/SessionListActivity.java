@@ -220,6 +220,11 @@ public class SessionListActivity extends Activity {
                                 if (isFinishing() || isDestroyed()) return;
                                 String detail = e.getMessage();
                                 if (detail == null || detail.isEmpty()) detail = getString(R.string.create_session_failed);
+                                // 服务端旧版不支持留空路径创建（内部 404）：提示填写路径重试
+                                if (detail.contains("404")) {
+                                    Toast.makeText(this, R.string.create_session_need_workdir, Toast.LENGTH_LONG).show();
+                                    return;
+                                }
                                 if (detail.length() > 120) detail = detail.substring(0, 120);
                                 statusText.setText(R.string.create_session_failed);
                                 Toast.makeText(this, detail, Toast.LENGTH_LONG).show();
