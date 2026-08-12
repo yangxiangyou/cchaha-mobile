@@ -34,12 +34,8 @@
     <string name="err_tap_refresh">Tap refresh above to retry</string>
     <string name="setup_hint">How to get the address:\n1. Open cc-haha desktop app on your computer\n2. Settings → H5 Access → enable “Enable H5 access”\n3. Tap “Generate token” — a QR code appears on screen\n4. Tap “Scan QR” below to scan it, or tap “Copy launch URL” and paste it above\n\nTap an address to connect; long-press to rename or delete.\nNote: phone and computer must be on the same Wi-Fi. The link contains a token — treat it like a password.</string>
     <string name="session_loading">Loading sessions…</string>
-    <string name="session_refreshing">Refreshing…</string>
     <string name="session_failed">Cannot reach server — is cc-haha running on the computer?</string>
     <string name="session_no_host">Configure an address in the connect page first</string>
-    <string name="create_session_title">New session</string>
-    <string name="create_workdir_hint">Project path (optional, default dir if empty)</string>
-    <string name="create_session_ok">Create</string>
     <string name="create_session_creating">Creating session…</string>
     <string name="create_session_new">New session</string>
     <string name="create_session_failed">Create failed — server not responding</string>
@@ -66,4 +62,18 @@ Tip: copy an existing project path from the session list</string>
 
 This address has not been saved. Connect anyway? (It will not be saved.)</string>
     <string name="deeplink_confirm_ok">Connect</string>
+    <string name="btn_refresh">Refresh</string>
+    <string name="btn_new_session">＋ New session</string>
+    <string name="btn_send">Send</string>
+    <string name="msg_input_hint">Type a message…</string>
+    <string name="url_input_hint">Enter H5 address, press Go</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_fwd">Forward</string>
+    <string name="cd_scan">Scan QR</string>
+    <string name="cd_refresh">Refresh</string>
+    <string name="cd_home">Back to sessions</string>
+    <string name="crash_title">App crashed</string>
+    <string name="crash_desc">Please copy the error info below and send it to the developer.</string>
+    <string name="crash_copy">Copy error info</string>
+    <string name="crash_retry">Back and retry</string>
 </resources>

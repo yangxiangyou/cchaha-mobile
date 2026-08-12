@@ -51,7 +51,7 @@
             android:layout_width="wrap_content"
             android:layout_height="38dp"
             android:layout_marginStart="6dp"
-            android:text="刷新"
+            android:text="@string/btn_refresh"
             android:textSize="13sp"
             android:background="@drawable/btn_home_secondary"
             android:textColor="@color/cc_brand" />
@@ -116,7 +116,7 @@
             android:id="@+id/session_new"
             android:layout_width="match_parent"
             android:layout_height="52dp"
-            android:text="＋ 新建会话"
+            android:text="@string/btn_new_session"
             android:textSize="15sp"
             android:textStyle="bold"
             android:background="@drawable/btn_home_primary"

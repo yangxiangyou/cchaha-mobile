@@ -60,6 +60,7 @@ public class MainActivity extends Activity {
 
     private FrameLayout webContainer;
     private View loadingMask;
+    private ProgressBar maskProgress;
     private WebView webView;
     private EditText urlInput;
     private View statusDot;
@@ -116,6 +117,7 @@ public class MainActivity extends Activity {
 
         webContainer = findViewById(R.id.web_container);
         loadingMask = findViewById(R.id.loading_mask);
+        maskProgress = findViewById(R.id.mask_progress);
         urlInput = findViewById(R.id.url_input);
         statusDot = findViewById(R.id.status_dot);
         progress = findViewById(R.id.progress);
@@ -394,6 +396,7 @@ public class MainActivity extends Activity {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
                 progress.setProgress(newProgress);
+                if (maskProgress != null) maskProgress.setProgress(newProgress);
             }
 
             @Override

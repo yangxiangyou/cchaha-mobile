@@ -91,14 +91,28 @@ public final class CrashCatcher {
     private static String stackToString(Throwable t, Context context) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
+        // 堆栈里的 URL 可能含 token：写入前脱敏（去掉 query）
+        PrintWriter sanitized = new PrintWriter(sw) {
+            @Override
+            public void write(String str) {
+                super.write(sanitizeUrl(str));
+            }
+        };
         pw.println("===== cchaha Mobile Crash " +
                 new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date()) + " =====");
-        pw.println("Device: " + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL);
-        pw.println("Android: " + android.os.Build.VERSION.RELEASE + " (API " + android.os.Build.VERSION.SDK_INT + ")");
-        pw.println("App: " + appVersion(context));
-        pw.println();
-        t.printStackTrace(pw);
+        sanitized.println("Device: " + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL);
+        sanitized.println("Android: " + android.os.Build.VERSION.RELEASE + " (API " + android.os.Build.VERSION.SDK_INT + ")");
+        sanitized.println("App: " + appVersion(context));
+        sanitized.println();
+        t.printStackTrace(sanitized);
+        sanitized.flush();
         return sw.toString();
+    }
+
+    /** 堆栈文本中出现的 http(s) URL 去掉 query（含 token），防 crash.log 泄露 */
+    private static String sanitizeUrl(String str) {
+        if (str == null || str.indexOf("://") < 0) return str;
+        return str.replaceAll("(https?://[^?\\s\\)\\]]+)\\?[^\\s\\)\\]]*", "$1");
     }
 
     private static String appVersion(Context context) {
