@@ -118,6 +118,9 @@ public class SessionMessagesActivity extends Activity {
 
         adapter = new MessageAdapter();
         messageList.setAdapter(adapter);
+        // 空态提示（无消息时居中显示）
+        View emptyView = findViewById(R.id.msg_empty);
+        if (emptyView != null) messageList.setEmptyView(emptyView);
 
         // 秒开：先渲染本地缓存（后台线程读文件 + 解析），再全量刷新
         final String sid = sessionId;
@@ -203,7 +206,13 @@ public class SessionMessagesActivity extends Activity {
                         lastMessageCount = messages.size();
                         adapter.refresh(messages);
                         statusText.setText(getString(R.string.msg_updated, messages.size()));
-                        if (messages.size() > 0) messageList.setSelection(messages.size() - 1); // 滚到底部
+                        // 仅在用户已接近底部时跟随滚动（浏览历史时不打扰）
+                        if (messages.size() > 0) {
+                            int last = messageList.getLastVisiblePosition();
+                            if (last >= messages.size() - 4) {
+                                messageList.setSelection(messages.size() - 1);
+                            }
+                        }
                         swipe.setRefreshing(false); // 完成即收尾
                         loading = false;
                     });
@@ -243,7 +252,7 @@ public class SessionMessagesActivity extends Activity {
                     android.app.PendingIntent.FLAG_UPDATE_CURRENT
                             | android.app.PendingIntent.FLAG_IMMUTABLE);
             android.app.Notification.Builder b = new android.app.Notification.Builder(this)
-                    .setSmallIcon(android.R.drawable.ic_dialog_email)
+                    .setSmallIcon(R.drawable.ic_stat_reply)
                     .setContentTitle(sessionTitle != null ? sessionTitle : "会话")
                     .setContentText("收到 " + count + " 条新消息")
                     .setAutoCancel(true)
@@ -355,10 +364,28 @@ public class SessionMessagesActivity extends Activity {
                 bubble.setText(buildStyledText(fm));
             });
 
-            String time = m.timestampMs > 0
-                    ? new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(m.timestampMs)) : "";
-            meta.setText((isUser ? "我" : "Claude") + " · " + time);
+            String time = m.timestampMs > 0 ? fmtTime(m.timestampMs) : "";
+            // 类型标签：思考/工具（辅助阅读长消息）
+            String tag = "";
+            for (SessionApi.Block b : m.blocks) {
+                if ("thinking".equals(b.type)) { tag = "思考"; break; }
+                if ("tool_use".equals(b.type)) { tag = "工具"; break; }
+            }
+            String who = isUser ? "我" : "Claude";
+            meta.setText(who + (tag.isEmpty() ? "" : " · " + tag) + " · " + time);
             return v;
+        }
+
+        /** 时间显示：当天 HH:mm，跨天带日期 MM-dd HH:mm */
+        private String fmtTime(long ms) {
+            java.util.Calendar c = java.util.Calendar.getInstance();
+            c.setTimeInMillis(ms);
+            java.util.Calendar now = java.util.Calendar.getInstance();
+            boolean sameDay = c.get(java.util.Calendar.YEAR) == now.get(java.util.Calendar.YEAR)
+                    && c.get(java.util.Calendar.DAY_OF_YEAR) == now.get(java.util.Calendar.DAY_OF_YEAR);
+            SimpleDateFormat fmt = new SimpleDateFormat(
+                    sameDay ? "HH:mm" : "MM-dd HH:mm", Locale.getDefault());
+            return fmt.format(new Date(ms));
         }
 
         /** 块级渲染：思考灰字折叠、工具等宽卡片、结果折叠、图片占位 */

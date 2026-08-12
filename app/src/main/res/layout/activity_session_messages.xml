@@ -63,14 +63,30 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <ListView
-            android:id="@+id/msg_list"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:divider="@null"
-            android:transcriptMode="normal"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp" />
+            android:layout_height="match_parent">
+
+            <ListView
+                android:id="@+id/msg_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:divider="@null"
+                android:transcriptMode="normal"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp" />
+
+            <!-- 空态提示 -->
+            <TextView
+                android:id="@+id/msg_empty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/msg_empty"
+                android:textColor="#66707A"
+                android:textSize="14sp"
+                android:visibility="gone" />
+        </FrameLayout>
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <!-- 输入区 -->
