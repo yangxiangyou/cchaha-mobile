@@ -23,6 +23,7 @@ import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -231,6 +232,22 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 return false; // 全部在 App 内加载
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                // 主文档 HTML 打补丁：屏蔽 H5 8 秒启动看门狗错误页（手机加载慢会闪错）
+                if (request != null && request.isForMainFrame()
+                        && ("http".equalsIgnoreCase(request.getUrl().getScheme())
+                            || "https".equalsIgnoreCase(request.getUrl().getScheme()))) {
+                    String patched = H5StartupPatcher.fetchPatched(request.getUrl().toString());
+                    if (patched != null) {
+                        return new WebResourceResponse("text/html", "UTF-8",
+                                new java.io.ByteArrayInputStream(
+                                        patched.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                    }
+                }
+                return super.shouldInterceptRequest(view, request);
             }
 
             @Override
