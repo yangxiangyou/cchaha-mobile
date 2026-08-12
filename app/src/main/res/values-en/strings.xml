@@ -36,12 +36,7 @@
     <string name="session_loading">Loading sessions…</string>
     <string name="session_failed">Cannot reach server — is cc-haha running on the computer?</string>
     <string name="session_no_host">Configure an address in the connect page first</string>
-    <string name="create_session_creating">Creating session…</string>
-    <string name="create_session_new">New session</string>
-    <string name="create_session_failed">Create failed — server not responding</string>
-    <string name="create_session_need_workdir">Create failed: please fill in a project path and retry (the server does not support empty paths)
 
-Tip: copy an existing project path from the session list</string>
     <string name="session_updated">Updated · %1$s</string>
     <string name="session_cached_at">Cached at %1$s</string>
     <string name="session_cached_stale">Server offline, showing cache (%1$s)</string>
@@ -63,7 +58,6 @@ Tip: copy an existing project path from the session list</string>
 This address has not been saved. Connect anyway? (It will not be saved.)</string>
     <string name="deeplink_confirm_ok">Connect</string>
     <string name="btn_refresh">Refresh</string>
-    <string name="btn_new_session">＋ New session</string>
     <string name="btn_send">Send</string>
     <string name="msg_input_hint">Type a message…</string>
     <string name="url_input_hint">Enter H5 address, press Go</string>

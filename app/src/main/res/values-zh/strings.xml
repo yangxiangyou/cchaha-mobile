@@ -36,12 +36,7 @@
     <string name="session_loading">正在加载会话列表…</string>
     <string name="session_failed">无法连接服务器，请检查电脑上的 cc-haha 是否在运行</string>
     <string name="session_no_host">请先在连接页配置地址</string>
-    <string name="create_session_creating">正在创建会话…</string>
-    <string name="create_session_new">新会话</string>
-    <string name="create_session_failed">创建失败，服务器无响应</string>
-    <string name="create_session_need_workdir">创建失败：请填写项目路径后重试（服务端不支持留空创建）
 
-提示：可以从会话列表里复制一个已有项目路径</string>
     <string name="session_updated">已更新 · %1$s</string>
     <string name="session_cached_at">缓存于 %1$s</string>
     <string name="session_cached_stale">服务器无响应，显示缓存（%1$s）</string>
@@ -63,7 +58,6 @@
 这个地址还没有保存过。确认后连接（不会自动保存）。</string>
     <string name="deeplink_confirm_ok">连接</string>
     <string name="btn_refresh">刷新</string>
-    <string name="btn_new_session">＋ 新建会话</string>
     <string name="btn_send">发送</string>
     <string name="msg_input_hint">输入消息…</string>
     <string name="url_input_hint">输入 H5 地址后回车</string>

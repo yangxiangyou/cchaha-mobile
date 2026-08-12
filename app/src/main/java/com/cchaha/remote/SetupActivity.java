@@ -134,8 +134,10 @@ public class SetupActivity extends Activity {
     }
 
     private void startMain() {
-        // 连接成功 → 原生会话列表（Codex 式秒开）
-        startSessionList();
+        // 点击设备/添加设备 → 直接进入 cc-haha 主界面（H5 完整版）；
+        // 想用原生会话列表可从主界面首页按钮进入
+        startActivity(new Intent(this, MainActivity.class));
+        finish();
     }
 
     private void startSessionList() {

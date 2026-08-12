@@ -72,7 +72,6 @@ public class SessionListActivity extends Activity {
         listView = findViewById(R.id.session_list);
         statusText = findViewById(R.id.session_status);
         Button refresh = findViewById(R.id.session_refresh);
-        Button newSession = findViewById(R.id.session_new);
         Button full = findViewById(R.id.session_full);
         Button device = findViewById(R.id.session_device);
         TextView title = findViewById(R.id.session_title);
@@ -96,7 +95,6 @@ public class SessionListActivity extends Activity {
         enterRefresh();
 
         refresh.setOnClickListener(v -> forceRefresh());
-        newSession.setOnClickListener(v -> showCreateSessionDialog());
         // 完整版入口：直接打开 WebView 主界面（H5 完整功能）
         full.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
         // 设备管理入口：回首页（添加/编辑/切换设备）；manual 防止自动跳回本页
@@ -129,7 +127,7 @@ public class SessionListActivity extends Activity {
         AppUpdateChecker.check(this);
 
         // WebView 预热：H5 首页经 frp 隧道很慢（实测 20s+），提前加载写磁盘缓存，
-        // 之后进完整版/新建会话时同 URL 命中缓存，黑屏时间大幅缩短
+        // 之后进完整版时同 URL 命中缓存，黑屏时间大幅缩短
         prewarmRunnable = this::prewarmH5;
         mainHandler.postDelayed(prewarmRunnable, 1000);
 
@@ -137,7 +135,7 @@ public class SessionListActivity extends Activity {
             SessionApi.SessionInfo s = adapter.getItem(position);
             if (s == null) return;
             // 全面原生路线：所有会话一律进原生消息页（秒开，缓存先行）；
-            // WebView 仅保留为兜底入口（完整版按钮/新建会话）
+            // WebView 仅保留为兜底入口（完整版按钮）
             Intent i = new Intent(this, SessionMessagesActivity.class);
             i.putExtra(SessionMessagesActivity.EXTRA_SESSION_ID, s.id);
             i.putExtra(SessionMessagesActivity.EXTRA_SESSION_TITLE, s.title);
@@ -231,35 +229,6 @@ public class SessionListActivity extends Activity {
         } else if (title != null) {
             title.setText(getString(R.string.app_name));
         }
-    }
-
-    /** 原生创建会话：一键创建（服务端默认用户主目录）→ 直接进消息页（免 WebView 黑屏、免弹窗） */
-    private void showCreateSessionDialog() {
-        final String url = baseUrl, tk = token;
-        statusText.setText(R.string.create_session_creating);
-        executor.execute(() -> {
-            try {
-                final String sid = SessionApi.createSession(url, tk, null);
-                mainHandler.post(() -> {
-                    if (isFinishing() || isDestroyed()) return;
-                    statusText.setText("");
-                    Intent i = new Intent(this, SessionMessagesActivity.class);
-                    i.putExtra(SessionMessagesActivity.EXTRA_SESSION_ID, sid);
-                    i.putExtra(SessionMessagesActivity.EXTRA_SESSION_TITLE,
-                            getString(R.string.create_session_new));
-                    startActivity(i);
-                });
-            } catch (Exception e) {
-                mainHandler.post(() -> {
-                    if (isFinishing() || isDestroyed()) return;
-                    String detail = e.getMessage();
-                    if (detail == null || detail.isEmpty()) detail = getString(R.string.create_session_failed);
-                    if (detail.length() > 120) detail = detail.substring(0, 120);
-                    statusText.setText(R.string.create_session_failed);
-                    Toast.makeText(this, detail, Toast.LENGTH_LONG).show();
-                });
-            }
-        });
     }
 
     /** 进入页面时的自动刷新：缓存新鲜（30 秒内）直接跳过，不打扰用户 */
