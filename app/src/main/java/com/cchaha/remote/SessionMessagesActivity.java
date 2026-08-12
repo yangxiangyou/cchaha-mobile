@@ -13,6 +13,7 @@ import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -421,6 +422,10 @@ public class SessionMessagesActivity extends Activity {
             SessionApi.Message m = getItem(position);
             boolean isUser = "user".equals(m.type);
             h.bubble.setBackgroundResource(isUser ? R.drawable.bubble_user : R.drawable.bubble_assistant);
+            // user 消息右对齐（与 Codex 式对话观感一致）；消息页根布局是 LinearLayout
+            LinearLayout.LayoutParams blp = (LinearLayout.LayoutParams) h.bubble.getLayoutParams();
+            blp.gravity = isUser ? android.view.Gravity.END : android.view.Gravity.START;
+            h.bubble.setLayoutParams(blp);
             String key = m.id + "|" + (expandedIds.contains(m.id) ? "1" : "0");
             CharSequence rendered = renderCache.get(key);
             if (rendered == null) {

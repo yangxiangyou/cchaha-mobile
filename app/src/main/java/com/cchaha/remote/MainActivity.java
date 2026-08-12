@@ -454,9 +454,8 @@ public class MainActivity extends Activity {
         });
         btnScan.setOnClickListener(v -> startScanner());
         btnHome.setOnClickListener(v -> {
-            // 回原生会话列表
+            // 回原生会话列表（不 finish 自己：列表页返回键可回到 H5，避免"返回即退出"）
             startActivity(new Intent(this, SessionListActivity.class));
-            finish();
         });
     }
 
@@ -721,9 +720,8 @@ public class MainActivity extends Activity {
                 webView.goBack();
                 return true;
             }
-            // 没有可返回的历史则回到会话列表
+            // 没有可返回的历史则回到会话列表（不 finish：列表页再返回一次才退出）
             startActivity(new Intent(this, SessionListActivity.class));
-            finish();
             return true;
         }
         return super.onKeyDown(keyCode, event);
