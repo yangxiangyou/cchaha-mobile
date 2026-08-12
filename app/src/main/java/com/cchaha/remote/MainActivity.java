@@ -339,11 +339,16 @@ public class MainActivity extends Activity {
             @Override
             public void onReceivedSslError(WebView view, android.webkit.SslErrorHandler handler,
                                            android.net.http.SslError error) {
-                // 仅对已保存主机放行（局域网/隧道自签证书场景）；其他主机拒绝
+                // 已保存主机（含当前地址）：放行（局域网/隧道自签、域名经 IP 访问场景）
+                // 其他主机：拒绝并显示可读错误页，避免系统 SSL 报错页
                 if (error != null && error.getUrl() != null && isAllowedHost(error.getUrl())) {
                     handler.proceed();
                 } else {
                     handler.cancel();
+                    if (error != null && error.getUrl() != null
+                            && error.getUrl().startsWith("http")) {
+                        showErrorPage();
+                    }
                 }
             }
 

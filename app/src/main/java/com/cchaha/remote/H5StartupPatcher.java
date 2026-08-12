@@ -78,7 +78,11 @@ public final class H5StartupPatcher {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             try {
                 if (conn instanceof HttpsURLConnection) {
-                    ((HttpsURLConnection) conn).setSSLSocketFactory(trustAllFactory());
+                    HttpsURLConnection hc = (HttpsURLConnection) conn;
+                    hc.setSSLSocketFactory(trustAllFactory());
+                    // 与 App 对 H5 的整体信任一致：跳过主机名校验
+                    // （证书签给域名、经 IP/隧道访问时主机名不匹配）
+                    hc.setHostnameVerifier((hostname, session) -> true);
                 }
                 conn.setConnectTimeout(TIMEOUT_MS);
                 conn.setReadTimeout(TIMEOUT_MS);
