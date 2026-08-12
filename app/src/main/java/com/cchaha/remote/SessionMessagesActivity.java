@@ -39,6 +39,7 @@ public class SessionMessagesActivity extends Activity {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private Storage storage;
+    private MessageCache messageCache;
     private String baseUrl = "";
     private String token = "";
     private String sessionId = "";
@@ -48,6 +49,7 @@ public class SessionMessagesActivity extends Activity {
     private TextView statusText;
     private EditText inputBox;
     private MessageAdapter adapter;
+    private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe;
     private boolean loading = false;
     private boolean visible = true;   // Activity 是否在前台
     private int lastMessageCount = 0; // 上次消息数（用于新回复检测）
@@ -70,14 +72,20 @@ public class SessionMessagesActivity extends Activity {
         inputBox = findViewById(R.id.msg_input);
         Button send = findViewById(R.id.msg_send);
         Button refresh = findViewById(R.id.msg_refresh);
+        Button full = findViewById(R.id.msg_full);
         TextView title = findViewById(R.id.msg_title);
-        androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe =
-                findViewById(R.id.msg_swipe);
+        swipe = findViewById(R.id.msg_swipe);
         swipe.setColorSchemeColors(0xFF4DA3FF);
-        swipe.setOnRefreshListener(() -> {
-            loadMessages();
-            mainHandler.postDelayed(() -> swipe.setRefreshing(false), 4000);
-        });
+        swipe.setOnRefreshListener(this::loadMessages); // 收尾在加载完成/失败回调里
+
+        messageCache = new MessageCache(this);
+
+        // Android 13+ 发通知需要运行时权限（新回复通知；拒绝则静默降级）
+        if (android.os.Build.VERSION.SDK_INT >= 33
+                && checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1);
+        }
 
         title.setText(sessionTitle != null && !sessionTitle.isEmpty() ? sessionTitle : "会话");
 
@@ -95,11 +103,44 @@ public class SessionMessagesActivity extends Activity {
 
         adapter = new MessageAdapter();
         messageList.setAdapter(adapter);
-        statusText.setText(R.string.msg_loading);
+
+        // 秒开：先渲染本地缓存（后台线程读文件 + 解析），再全量刷新
+        final String sid = sessionId;
+        executor.execute(() -> {
+            String cachedJson = messageCache.load(sid);
+            if (cachedJson != null) {
+                try {
+                    List<SessionApi.Message> cached = SessionApi.parseMessages(cachedJson);
+                    mainHandler.post(() -> {
+                        if (isFinishing()) return;
+                        adapter.refresh(cached);
+                        lastMessageCount = cached.size();
+                        statusText.setText(R.string.msg_cache_loading);
+                        if (cached.size() > 0) messageList.setSelection(cached.size() - 1); // 滚到底部
+                    });
+                    return; // 有缓存：无加载中文案，后台刷新继续
+                } catch (Exception ignored) { }
+            }
+            mainHandler.post(() -> {
+                if (!isFinishing() && adapter.getCount() == 0) {
+                    statusText.setText(R.string.msg_loading);
+                }
+            });
+        });
 
         loadMessages();
 
         refresh.setOnClickListener(v -> loadMessages());
+
+        // 兜底入口：切 WebView 完整版（权限批准/附件等原生未覆盖功能）
+        full.setOnClickListener(v -> {
+            Intent i = new Intent(this, MainActivity.class);
+            if (!sessionId.isEmpty()) i.putExtra(MainActivity.EXTRA_OPEN_SESSION, sessionId);
+            if (sessionTitle != null && !sessionTitle.isEmpty()) {
+                i.putExtra(MainActivity.EXTRA_SESSION_TITLE, sessionTitle);
+            }
+            startActivity(i);
+        });
 
         send.setOnClickListener(v -> {
             String content = inputBox.getText().toString().trim();
@@ -127,11 +168,16 @@ public class SessionMessagesActivity extends Activity {
     private void loadMessages() {
         if (loading || baseUrl.isEmpty() || token.isEmpty() || sessionId.isEmpty()) return;
         loading = true;
-        statusText.setText(R.string.msg_loading);
+        // 无缓存（列表为空）时才显示"加载中"；有缓存的后台刷新保持缓存提示
+        if (adapter.getCount() == 0) {
+            statusText.setText(R.string.msg_loading);
+        }
         final String url = baseUrl, tk = token, sid = sessionId;
         executor.execute(() -> {
             try {
-                List<SessionApi.Message> messages = SessionApi.fetchMessages(url, tk, sid);
+                String json = SessionApi.fetchMessagesJson(url, tk, sid);
+                messageCache.save(sid, json);
+                List<SessionApi.Message> messages = SessionApi.parseMessages(json);
                 mainHandler.post(() -> {
                     // 新回复检测：消息变多且界面不在前台 → 通知
                     if (lastMessageCount > 0 && messages.size() > lastMessageCount && !visible) {
@@ -140,12 +186,19 @@ public class SessionMessagesActivity extends Activity {
                     lastMessageCount = messages.size();
                     adapter.refresh(messages);
                     statusText.setText(getString(R.string.msg_updated, messages.size()));
-                    messageList.setSelection(messages.size() - 1); // 滚到底部
+                    if (messages.size() > 0) messageList.setSelection(messages.size() - 1); // 滚到底部
+                    swipe.setRefreshing(false); // 完成即收尾
                 });
             } catch (Exception e) {
                 mainHandler.post(() -> {
-                    statusText.setText(R.string.msg_failed);
-                    Toast.makeText(this, R.string.msg_failed, Toast.LENGTH_SHORT).show();
+                    if (adapter.getCount() == 0) {
+                        statusText.setText(R.string.msg_failed);
+                        Toast.makeText(this, R.string.msg_failed, Toast.LENGTH_SHORT).show();
+                    } else {
+                        // 有缓存：保留缓存内容，只提示刷新失败
+                        statusText.setText(R.string.msg_refresh_failed_keep);
+                    }
+                    swipe.setRefreshing(false);
                 });
             } finally {
                 loading = false;

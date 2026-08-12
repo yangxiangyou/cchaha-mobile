@@ -131,6 +131,11 @@ public final class SessionApi {
 
     /** 拉取会话全部消息（cc-haha API 忽略 limit，总是返回全量；大会话约 6 秒） */
     public static List<Message> fetchMessages(String baseUrl, String token, String sessionId) throws Exception {
+        return parseMessages(fetchMessagesJson(baseUrl, token, sessionId));
+    }
+
+    /** 拉取消息并返回原始 JSON 字符串（供本地缓存直接存储，避免二次序列化） */
+    public static String fetchMessagesJson(String baseUrl, String token, String sessionId) throws Exception {
         String urlStr = baseUrl + "/api/sessions/" + sessionId + "/messages";
         HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
         try {
@@ -147,19 +152,24 @@ public final class SessionApi {
                 String line;
                 while ((line = br.readLine()) != null) sb.append(line);
             }
-            JSONObject root = new JSONObject(sb.toString());
-            JSONArray arr = root.optJSONArray("messages");
-            List<Message> list = new ArrayList<>();
-            if (arr != null) {
-                for (int i = 0; i < arr.length(); i++) {
-                    Message m = new Message(arr.getJSONObject(i));
-                    if (m.id != null && !m.id.isEmpty()) list.add(m);
-                }
-            }
-            return list;
+            return sb.toString();
         } finally {
             conn.disconnect();
         }
+    }
+
+    /** 从消息 JSON 字符串解析消息列表（缓存读取时复用） */
+    public static List<Message> parseMessages(String json) throws Exception {
+        JSONObject root = new JSONObject(json);
+        JSONArray arr = root.optJSONArray("messages");
+        List<Message> list = new ArrayList<>();
+        if (arr != null) {
+            for (int i = 0; i < arr.length(); i++) {
+                Message m = new Message(arr.getJSONObject(i));
+                if (m.id != null && !m.id.isEmpty()) list.add(m);
+            }
+        }
+        return list;
     }
 
     /** 发送消息（202 异步接受） */

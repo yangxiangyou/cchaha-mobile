@@ -28,4 +28,21 @@
     <string name="err_check_hint">检查：\n① 电脑上的 cc-haha 是否在运行\n② 地址是否填对（局域网要同一 Wi-Fi；远程用公网域名或隧道地址）\n③ H5 开关是否还开着</string>
     <string name="err_tap_refresh">点上方刷新按钮重试</string>
     <string name="setup_hint">怎么拿地址：\n1. 电脑上打开 cc-haha 桌面应用\n2. 设置 → H5 Access → 开启 Enable H5 access\n3. 点 Generate token，屏幕上会出现二维码\n4. 点下方「扫码连接」扫它，或点 Copy launch URL 粘贴到上面\n\n点地址直接连接，长按可重命名或删除。\n注意：手机和电脑必须连同一个 Wi-Fi；链接含 token，别发给别人。</string>
+    <string name="session_loading">正在加载会话列表…</string>
+    <string name="session_refreshing">正在刷新…</string>
+    <string name="session_failed">无法连接服务器，请检查电脑上的 cc-haha 是否在运行</string>
+    <string name="session_no_host">请先在连接页配置地址</string>
+    <string name="session_updated">已更新 · %1$s</string>
+    <string name="session_cached_at">缓存于 %1$s</string>
+    <string name="session_cached_stale">服务器无响应，显示缓存（%1$s）</string>
+    <string name="session_refresh_failed">刷新失败，服务器无响应</string>
+    <string name="msg_loading">正在加载消息…（大会话约需几秒）</string>
+    <string name="msg_updated">共 %1$d 条消息 · 已更新</string>
+    <string name="msg_failed">消息加载失败，请检查服务器</string>
+    <string name="msg_sending">发送中…</string>
+    <string name="msg_sent">已发送，等待回复…</string>
+    <string name="msg_send_failed">发送失败，服务器无响应</string>
+    <string name="msg_cache_loading">显示缓存内容，后台刷新中…</string>
+    <string name="msg_refresh_failed_keep">刷新失败，保留缓存内容</string>
+    <string name="msg_full_version">完整版</string>
 </resources>

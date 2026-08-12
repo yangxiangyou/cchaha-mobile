@@ -42,4 +42,7 @@
     <string name="msg_sending">Sending…</string>
     <string name="msg_sent">Sent, waiting for reply…</string>
     <string name="msg_send_failed">Send failed — server not responding</string>
+    <string name="msg_cache_loading">Showing cached messages, refreshing…</string>
+    <string name="msg_refresh_failed_keep">Refresh failed — showing cached content</string>
+    <string name="msg_full_version">Full version</string>
 </resources>

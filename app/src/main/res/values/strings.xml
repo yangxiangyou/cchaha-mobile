@@ -42,4 +42,7 @@
     <string name="msg_sending">发送中…</string>
     <string name="msg_sent">已发送，等待回复…</string>
     <string name="msg_send_failed">发送失败，服务器无响应</string>
+    <string name="msg_cache_loading">显示缓存内容，后台刷新中…</string>
+    <string name="msg_refresh_failed_keep">刷新失败，保留缓存内容</string>
+    <string name="msg_full_version">完整版</string>
 </resources>

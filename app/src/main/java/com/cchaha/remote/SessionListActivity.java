@@ -32,6 +32,9 @@ import java.util.concurrent.Executors;
  */
 public class SessionListActivity extends Activity {
 
+    /** 缓存新鲜阈值：进入页面时缓存在此时间内则跳过全量刷新 */
+    private static final long CACHE_FRESH_MS = 30_000;
+
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
@@ -40,6 +43,7 @@ public class SessionListActivity extends Activity {
     private ListView listView;
     private TextView statusText;
     private SessionAdapter adapter;
+    private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe;
     private String baseUrl = "";
     private String token = "";
     private List<SessionApi.SessionInfo> allSessions = new ArrayList<>(); // 全量（供搜索过滤）
@@ -61,9 +65,9 @@ public class SessionListActivity extends Activity {
         Button newSession = findViewById(R.id.session_new);
         TextView title = findViewById(R.id.session_title);
         EditText searchBox = findViewById(R.id.session_search);
-        androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe =
-                findViewById(R.id.session_swipe);
+        swipe = findViewById(R.id.session_swipe);
         swipe.setColorSchemeColors(0xFF4DA3FF);
+        swipe.setOnRefreshListener(this::forceRefresh); // 收尾在完成/失败回调里
 
         Storage.SavedHost host = storage.getCurrentHost();
         if (host != null) {
@@ -85,14 +89,10 @@ public class SessionListActivity extends Activity {
             statusText.setText(getString(R.string.session_cached_at, fmtTime(cache.savedAtMs())));
         }
 
-        // 2. 后台刷新
-        refreshSessions();
+        // 2. 后台刷新（进入时走 TTL：缓存新鲜则跳过）
+        enterRefresh();
 
-        refresh.setOnClickListener(v -> refreshSessions());
-        swipe.setOnRefreshListener(() -> {
-            refreshSessions();
-            mainHandler.postDelayed(() -> swipe.setRefreshing(false), 3000);
-        });
+        refresh.setOnClickListener(v -> forceRefresh());
         newSession.setOnClickListener(v -> openMain(null, null));
 
         // 搜索过滤
@@ -120,15 +120,12 @@ public class SessionListActivity extends Activity {
         listView.setOnItemClickListener((parent, view, position, id) -> {
             SessionApi.SessionInfo s = adapter.getItem(position);
             if (s == null) return;
-            // 大会话走原生消息流（WebView 加载大会话会 120s 超时）
-            if (s.messageCount >= 1000) {
-                Intent i = new Intent(this, SessionMessagesActivity.class);
-                i.putExtra(SessionMessagesActivity.EXTRA_SESSION_ID, s.id);
-                i.putExtra(SessionMessagesActivity.EXTRA_SESSION_TITLE, s.title);
-                startActivity(i);
-            } else {
-                openMain(s.id, s.title);
-            }
+            // 全面原生路线：所有会话一律进原生消息页（秒开，缓存先行）；
+            // WebView 仅保留为兜底入口（完整版按钮/新建会话）
+            Intent i = new Intent(this, SessionMessagesActivity.class);
+            i.putExtra(SessionMessagesActivity.EXTRA_SESSION_ID, s.id);
+            i.putExtra(SessionMessagesActivity.EXTRA_SESSION_TITLE, s.title);
+            startActivity(i);
         });
     }
 
@@ -141,12 +138,24 @@ public class SessionListActivity extends Activity {
         return j > 0 ? rest.substring(0, j) : rest;
     }
 
-    private void refreshSessions() {
+    /** 进入页面时的自动刷新：缓存新鲜（30 秒内）直接跳过，不打扰用户 */
+    private void enterRefresh() {
+        long age = System.currentTimeMillis() - cache.savedAtMs();
+        if (adapter.getCount() > 0 && age < CACHE_FRESH_MS) return;
+        forceRefresh();
+    }
+
+    /** 强制刷新（手动按钮 / 下拉刷新 / 缓存过期） */
+    private void forceRefresh() {
         if (baseUrl.isEmpty() || token.isEmpty()) {
             statusText.setText(R.string.session_no_host);
+            swipe.setRefreshing(false);
             return;
         }
-        statusText.setText(R.string.session_refreshing);
+        // 有缓存时保持"缓存于 xx"文案，不显示"正在刷新"占位；无缓存才显示加载
+        if (adapter.getCount() == 0) {
+            statusText.setText(R.string.session_loading);
+        }
         final String url = baseUrl;
         final String tk = token;
         executor.execute(() -> {
@@ -157,6 +166,7 @@ public class SessionListActivity extends Activity {
                     allSessions = new ArrayList<>(sessions);
                     adapter.refresh(sessions);
                     statusText.setText(getString(R.string.session_updated, fmtTime(System.currentTimeMillis())));
+                    swipe.setRefreshing(false);
                 });
             } catch (Exception e) {
                 mainHandler.post(() -> {
@@ -166,6 +176,7 @@ public class SessionListActivity extends Activity {
                         statusText.setText(getString(R.string.session_cached_stale, fmtTime(cache.savedAtMs())));
                         Toast.makeText(this, R.string.session_refresh_failed, Toast.LENGTH_SHORT).show();
                     }
+                    swipe.setRefreshing(false);
                 });
             }
         });
