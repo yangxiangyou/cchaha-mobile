@@ -10,6 +10,7 @@
     <string name="action_rename">Rename</string>
     <string name="action_edit">Edit</string>
     <string name="host_updated">Device updated</string>
+    <string name="action_devices">Devices</string>
     <string name="action_delete">Delete</string>
     <string name="current_badge">CURRENT</string>
     <string name="host_deleted">Address deleted</string>

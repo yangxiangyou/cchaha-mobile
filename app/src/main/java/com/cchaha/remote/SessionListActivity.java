@@ -73,6 +73,7 @@ public class SessionListActivity extends Activity {
         Button refresh = findViewById(R.id.session_refresh);
         Button newSession = findViewById(R.id.session_new);
         Button full = findViewById(R.id.session_full);
+        Button device = findViewById(R.id.session_device);
         TextView title = findViewById(R.id.session_title);
         EditText searchBox = findViewById(R.id.session_search);
         swipe = findViewById(R.id.session_swipe);
@@ -106,6 +107,12 @@ public class SessionListActivity extends Activity {
         newSession.setOnClickListener(v -> showCreateSessionDialog());
         // 完整版入口：直接打开 WebView 主界面（H5 完整功能）
         full.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
+        // 设备管理入口：回首页（添加/编辑/切换设备）；manual 防止自动跳回本页
+        device.setOnClickListener(v -> {
+            Intent i = new Intent(this, SetupActivity.class);
+            i.putExtra(SetupActivity.EXTRA_MANUAL, true);
+            startActivity(i);
+        });
 
         // 搜索过滤
         searchBox.addTextChangedListener(new android.text.TextWatcher() {
