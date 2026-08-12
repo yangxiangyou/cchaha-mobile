@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">cchaha Mobile</string>
     <string name="setup_subtitle">cc-haha 桌面会话遥控</string>
-    <string name="url_hint">地址（如 https://82.157.189.235）</string>
+    <string name="url_hint">地址（如 https://192.168.1.20:8080）</string>
     <string name="token_hint">token（电脑上 Copy launch URL 里的那串）</string>
     <string name="token_required">请填写 token（或直接粘贴完整链接到地址栏）</string>
     <string name="action_connect">连接</string>
@@ -29,7 +29,7 @@
     <string name="err_cant_connect">连接不到电脑</string>
     <string name="err_check_hint">检查：\n① 电脑上的 cc-haha 是否在运行\n② 地址是否填对（局域网要同一 Wi-Fi；远程用公网域名或隧道地址）\n③ H5 开关是否还开着</string>
     <string name="err_tap_refresh">点上方刷新按钮重试</string>
-    <string name="setup_hint">怎么填：\n1. 电脑上打开 cc-haha → 设置 → H5 Access → 开启\n2. 地址行填：https://你的地址（如 82.157.189.235）\n3. token 行填：点 Copy launch URL，取 ?token= 后面那串\n\n或者把完整链接（含 token）直接粘到地址行，token 行留空即可。\n点「扫码连接」扫电脑屏幕上的二维码也行。\n点地址直接连接，长按可重命名或删除。\n注意：token 等于你电脑的钥匙，别发给别人。</string>
+    <string name="setup_hint">怎么填：\n1. 电脑上打开 cc-haha → 设置 → H5 Access → 开启\n2. 地址行填：https://你的地址（如 192.168.1.20:8080）\n3. token 行填：点 Copy launch URL，取 ?token= 后面那串\n\n或者把完整链接（含 token）直接粘到地址行，token 行留空即可。\n点「扫码连接」扫电脑屏幕上的二维码也行。\n点地址直接连接，长按可重命名或删除。\n注意：token 等于你电脑的钥匙，别发给别人。</string>
     <string name="session_loading">正在加载会话列表…</string>
     <string name="session_refreshing">正在刷新…</string>
     <string name="session_failed">无法连接服务器，请检查电脑上的 cc-haha 是否在运行</string>

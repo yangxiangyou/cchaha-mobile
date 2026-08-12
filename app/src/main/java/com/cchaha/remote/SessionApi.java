@@ -56,7 +56,7 @@ public final class SessionApi {
         }
     }
 
-    /** 拉取会话列表。baseUrl 如 https://82.157.189.235，token 为 H5 token。失败抛异常。 */
+    /** 拉取会话列表。baseUrl 如 https://192.168.1.20:8080，token 为 H5 token。失败抛异常。 */
     public static List<SessionInfo> fetchSessions(String baseUrl, String token) throws Exception {
         String urlStr = baseUrl + "/api/sessions?limit=200";
         String referer = baseUrl + "/?token=" + token;
