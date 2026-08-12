@@ -222,7 +222,7 @@ public class MainActivity extends Activity {
                 "if(steps>40)clearInterval(t);},1000);})();", null);
     }
 
-    /** 主机是否在已保存主机列表（SSL 放行与页面拦截白名单用） */
+    /** 主机是否在已保存主机列表（SSL 放行与页面拦截白名单用；复用 storage 字段避免高频建对象） */
     private boolean isAllowedHost(String url) {
         try {
             String host = android.net.Uri.parse(url).getHost();
@@ -231,10 +231,12 @@ public class MainActivity extends Activity {
                 String cur = android.net.Uri.parse(currentUrl).getHost();
                 if (host.equalsIgnoreCase(cur)) return true;
             }
-            List<Storage.SavedHost> hosts = new Storage(this).getHosts();
-            for (Storage.SavedHost h : hosts) {
-                String hh = android.net.Uri.parse(h.url).getHost();
-                if (hh != null && hh.equalsIgnoreCase(host)) return true;
+            if (storage != null) {
+                List<Storage.SavedHost> hosts = storage.getHosts();
+                for (Storage.SavedHost h : hosts) {
+                    String hh = android.net.Uri.parse(h.url).getHost();
+                    if (hh != null && hh.equalsIgnoreCase(host)) return true;
+                }
             }
             return false;
         } catch (Exception e) {

@@ -110,15 +110,24 @@ public final class H5StartupPatcher {
         }
     }
 
-    /** 全信任 TLS（与 WebView 对局域网/隧道自签证书的处理一致） */
+    /** 全信任 TLS 单例（与 WebView 对局域网/隧道自签证书的处理一致） */
+    private static volatile SSLSocketFactory trustAllFactory;
+
     private static SSLSocketFactory trustAllFactory() throws Exception {
-        TrustManager[] trustAll = { new X509TrustManager() {
-            @Override public void checkClientTrusted(X509Certificate[] chain, String authType) { }
-            @Override public void checkServerTrusted(X509Certificate[] chain, String authType) { }
-            @Override public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
-        } };
-        SSLContext ctx = SSLContext.getInstance("TLS");
-        ctx.init(null, trustAll, new SecureRandom());
-        return ctx.getSocketFactory();
+        if (trustAllFactory == null) {
+            synchronized (H5StartupPatcher.class) {
+                if (trustAllFactory == null) {
+                    TrustManager[] trustAll = { new X509TrustManager() {
+                        @Override public void checkClientTrusted(X509Certificate[] chain, String authType) { }
+                        @Override public void checkServerTrusted(X509Certificate[] chain, String authType) { }
+                        @Override public X509Certificate[] getAcceptedIssuers() { return new X509Certificate[0]; }
+                    } };
+                    SSLContext ctx = SSLContext.getInstance("TLS");
+                    ctx.init(null, trustAll, new SecureRandom());
+                    trustAllFactory = ctx.getSocketFactory();
+                }
+            }
+        }
+        return trustAllFactory;
     }
 }

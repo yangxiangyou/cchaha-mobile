@@ -176,13 +176,18 @@ public class SessionListActivity extends Activity {
         }
     }
 
-    /** 从完整 H5 URL 提取 token（?token=xxx） */
+    /** 从完整 H5 URL 提取 token（?token=xxx）；URL 内为编码形式，取出后解码还原原始 token */
     private String extractToken(String url) {
         int i = url.indexOf("token=");
         if (i < 0) return "";
         String rest = url.substring(i + 6);
         int j = rest.indexOf('&');
-        return j > 0 ? rest.substring(0, j) : rest;
+        String raw = j > 0 ? rest.substring(0, j) : rest;
+        try {
+            return java.net.URLDecoder.decode(raw, "UTF-8");
+        } catch (Exception e) {
+            return raw;
+        }
     }
 
     /** 原生创建会话：对话框输入项目路径（可空）→ API 直建 → 直接进消息页（免 WebView 黑屏） */
@@ -251,6 +256,7 @@ public class SessionListActivity extends Activity {
                 List<SessionApi.SessionInfo> sessions = SessionApi.fetchSessions(url, tk);
                 cache.save(sessions);
                 mainHandler.post(() -> {
+                    if (isFinishing() || isDestroyed()) return;
                     allSessions = new ArrayList<>(sessions);
                     adapter.refresh(sessions);
                     statusText.setText(getString(R.string.session_updated, fmtTime(System.currentTimeMillis())));
@@ -258,6 +264,7 @@ public class SessionListActivity extends Activity {
                 });
             } catch (Exception e) {
                 mainHandler.post(() -> {
+                    if (isFinishing() || isDestroyed()) return;
                     if (adapter.getCount() == 0) {
                         statusText.setText(R.string.session_failed);
                     } else {

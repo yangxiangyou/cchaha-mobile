@@ -36,6 +36,8 @@ public class SessionMessagesActivity extends Activity {
     static final String EXTRA_SESSION_TITLE = "session_title";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    // 发送独立线程：避免被大会话 120s 拉取阻塞
+    private final ExecutorService sendExecutor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     private Storage storage;
@@ -112,7 +114,12 @@ public class SessionMessagesActivity extends Activity {
             if (i >= 0) {
                 String rest = url.substring(i + 6);
                 int j = rest.indexOf('&');
-                token = j > 0 ? rest.substring(0, j) : rest;
+                String raw = j > 0 ? rest.substring(0, j) : rest;
+                try {
+                    token = java.net.URLDecoder.decode(raw, "UTF-8");
+                } catch (Exception e) {
+                    token = raw;
+                }
             }
         }
 
@@ -166,20 +173,25 @@ public class SessionMessagesActivity extends Activity {
             inputBox.setText("");
             statusText.setText(R.string.msg_sending);
             final String msg = content;
-            executor.execute(() -> {
-                boolean ok = SessionApi.sendMessage(baseUrl, token, sessionId, msg);
-                mainHandler.post(() -> {
-                    if (ok) {
-                        statusText.setText(R.string.msg_sent);
-                        // 5 秒后自动刷新拿回复
-                        mainHandler.postDelayed(this::loadMessages, 5000);
-                    } else {
-                        statusText.setText(R.string.msg_send_failed);
-                        Toast.makeText(this, R.string.msg_send_failed, Toast.LENGTH_SHORT).show();
-                        inputBox.setText(msg);
-                    }
+            try {
+                sendExecutor.execute(() -> {
+                    boolean ok = SessionApi.sendMessage(baseUrl, token, sessionId, msg);
+                    mainHandler.post(() -> {
+                        if (isFinishing() || isDestroyed()) return;
+                        if (ok) {
+                            statusText.setText(R.string.msg_sent);
+                            // 5 秒后自动刷新拿回复
+                            mainHandler.postDelayed(this::loadMessages, 5000);
+                        } else {
+                            statusText.setText(R.string.msg_send_failed);
+                            Toast.makeText(this, R.string.msg_send_failed, Toast.LENGTH_SHORT).show();
+                            inputBox.setText(msg);
+                        }
+                    });
                 });
-            });
+            } catch (java.util.concurrent.RejectedExecutionException e) {
+                // 已销毁：静默
+            }
         });
     }
 
@@ -289,6 +301,7 @@ public class SessionMessagesActivity extends Activity {
         // 清理全部挂起回调（轮询/发送后延迟刷新/加载回调），防止销毁后触碰 UI
         mainHandler.removeCallbacksAndMessages(null);
         executor.shutdownNow();
+        sendExecutor.shutdownNow();
         super.onDestroy();
     }
 

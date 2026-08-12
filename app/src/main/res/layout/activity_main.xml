@@ -90,12 +90,12 @@
         android:progressTint="#4DA3FF"
         android:visibility="gone" />
 
-    <!-- WebView 容器：渲染进程崩溃时可重建而不白屏 -->
+    <!-- WebView 容器：渲染进程崩溃时可重建而不白屏
+         （FrameLayout 根布局下必须 match_parent；0dp+weight 是 LinearLayout 属性，会让 WebView 高度为 0 导致黑屏） -->
     <FrameLayout
         android:id="@+id/web_container"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_height="match_parent" />
 
     <!-- 加载遮罩：页面加载/重建时给明确的等待反馈，避免黑屏观感 -->
     <FrameLayout
