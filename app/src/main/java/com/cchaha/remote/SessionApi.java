@@ -66,6 +66,7 @@ public final class SessionApi {
             conn.setReadTimeout(TIMEOUT_MS);
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Referer", referer);
+            conn.setRequestProperty("Authorization", "Bearer " + token);
             conn.setRequestProperty("Accept", "application/json");
             int code = conn.getResponseCode();
             if (code != 200) {
@@ -161,6 +162,7 @@ public final class SessionApi {
             conn.setReadTimeout(120000); // 大会话需要更久
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Referer", baseUrl + "/?token=" + token);
+            conn.setRequestProperty("Authorization", "Bearer " + token);
             conn.setRequestProperty("Accept", "application/json");
             int code = conn.getResponseCode();
             if (code != 200) throw new Exception("API 返回 " + code);
@@ -199,6 +201,7 @@ public final class SessionApi {
             conn.setReadTimeout(TIMEOUT_MS);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Referer", baseUrl + "/?token=" + token);
+            conn.setRequestProperty("Authorization", "Bearer " + token);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
             String body = (workDir == null || workDir.trim().isEmpty())
@@ -232,6 +235,7 @@ public final class SessionApi {
                 conn.setReadTimeout(30000);
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Referer", baseUrl + "/?token=" + token);
+                conn.setRequestProperty("Authorization", "Bearer " + token);
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
                 String body = "{\"content\":\"" + escapeJson(content) + "\",\"type\":\"user\"}";
@@ -261,6 +265,7 @@ public final class SessionApi {
                 conn.setReadTimeout(8000);
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("Referer", baseUrl + "/?token=" + token);
+                conn.setRequestProperty("Authorization", "Bearer " + token);
                 return conn.getResponseCode() == 200;
             } finally {
                 conn.disconnect();
