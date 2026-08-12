@@ -190,50 +190,33 @@ public class SessionListActivity extends Activity {
         }
     }
 
-    /** 原生创建会话：对话框输入项目路径（可空）→ API 直建 → 直接进消息页（免 WebView 黑屏） */
+    /** 原生创建会话：一键创建（服务端默认用户主目录）→ 直接进消息页（免 WebView 黑屏、免弹窗） */
     private void showCreateSessionDialog() {
-        EditText input = new EditText(this);
-        input.setSingleLine(true);
-        input.setHint(R.string.create_workdir_hint);
-        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
-        new android.app.AlertDialog.Builder(this)
-                .setTitle(R.string.create_session_title)
-                .setView(input)
-                .setPositiveButton(R.string.create_session_ok, (d, w) -> {
-                    final String workDir = input.getText().toString().trim();
-                    final String url = baseUrl, tk = token;
-                    statusText.setText(R.string.create_session_creating);
-                    executor.execute(() -> {
-                        try {
-                            final String sid = SessionApi.createSession(url, tk, workDir);
-                            mainHandler.post(() -> {
-                                if (isFinishing() || isDestroyed()) return;
-                                statusText.setText("");
-                                Intent i = new Intent(this, SessionMessagesActivity.class);
-                                i.putExtra(SessionMessagesActivity.EXTRA_SESSION_ID, sid);
-                                i.putExtra(SessionMessagesActivity.EXTRA_SESSION_TITLE,
-                                        getString(R.string.create_session_new));
-                                startActivity(i);
-                            });
-                        } catch (Exception e) {
-                            mainHandler.post(() -> {
-                                if (isFinishing() || isDestroyed()) return;
-                                String detail = e.getMessage();
-                                if (detail == null || detail.isEmpty()) detail = getString(R.string.create_session_failed);
-                                // 服务端旧版不支持留空路径创建（内部 404）：提示填写路径重试
-                                if (detail.contains("404")) {
-                                    Toast.makeText(this, R.string.create_session_need_workdir, Toast.LENGTH_LONG).show();
-                                    return;
-                                }
-                                if (detail.length() > 120) detail = detail.substring(0, 120);
-                                statusText.setText(R.string.create_session_failed);
-                                Toast.makeText(this, detail, Toast.LENGTH_LONG).show();
-                            });
-                        }
-                    });
-                })
-                .setNegativeButton(android.R.string.cancel, null)
-                .show();
+        final String url = baseUrl, tk = token;
+        statusText.setText(R.string.create_session_creating);
+        executor.execute(() -> {
+            try {
+                final String sid = SessionApi.createSession(url, tk, null);
+                mainHandler.post(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    statusText.setText("");
+                    Intent i = new Intent(this, SessionMessagesActivity.class);
+                    i.putExtra(SessionMessagesActivity.EXTRA_SESSION_ID, sid);
+                    i.putExtra(SessionMessagesActivity.EXTRA_SESSION_TITLE,
+                            getString(R.string.create_session_new));
+                    startActivity(i);
+                });
+            } catch (Exception e) {
+                mainHandler.post(() -> {
+                    if (isFinishing() || isDestroyed()) return;
+                    String detail = e.getMessage();
+                    if (detail == null || detail.isEmpty()) detail = getString(R.string.create_session_failed);
+                    if (detail.length() > 120) detail = detail.substring(0, 120);
+                    statusText.setText(R.string.create_session_failed);
+                    Toast.makeText(this, detail, Toast.LENGTH_LONG).show();
+                });
+            }
+        });
     }
 
     /** 进入页面时的自动刷新：缓存新鲜（30 秒内）直接跳过，不打扰用户 */
