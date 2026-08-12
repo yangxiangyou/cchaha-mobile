@@ -35,6 +35,8 @@ public final class AppUpdateChecker {
     /** APK 下载走镜像前缀（浏览器打开即经镜像加速下载） */
     private static final String DOWNLOAD_MIRROR_PREFIX = "https://gh-proxy.com/";
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    /** 单进程内只检查一次（多列表页实例会重复触发弹窗） */
+    private static volatile boolean checked = false;
 
     private AppUpdateChecker() { }
 
@@ -62,8 +64,10 @@ public final class AppUpdateChecker {
         }
     }
 
-    /** 后台检查，有新版本弹提示 */
+    /** 后台检查，有新版本弹提示（进程内仅一次） */
     public static void check(final Context context) {
+        if (checked) return;
+        checked = true;
         executor.execute(() -> {
             try {
                 String latest = "", body = "", url = "";

@@ -80,26 +80,17 @@ public class SessionListActivity extends Activity {
         swipe.setColorSchemeColors(0xFF4DA3FF);
         swipe.setOnRefreshListener(this::forceRefresh); // 收尾在完成/失败回调里
 
-        Storage.SavedHost host = storage.getCurrentHost();
-        if (host != null) {
-            baseUrl = host.url.contains("?") ? host.url.substring(0, host.url.indexOf('?')) : host.url;
-            token = extractToken(host.url);
-            title.setText(host.name);
-        } else {
-            title.setText(getString(R.string.app_name));
-        }
-
+        initHost();
         // 1. 秒开：先显示缓存
-        List<SessionApi.SessionInfo> cached = cache.load();
+        List<SessionApi.SessionInfo> cached = cache.load(baseUrl);
         allSessions = new ArrayList<>(cached);
         adapter = new SessionAdapter(cached);
         listView.setAdapter(adapter);
         if (cached.isEmpty()) {
             statusText.setText(R.string.session_loading);
         } else {
-            statusText.setText(getString(R.string.session_cached_at, fmtTime(cache.savedAtMs())));
+            statusText.setText(getString(R.string.session_cached_at, fmtTime(cache.savedAtMs(baseUrl))));
         }
-
         // 2. 后台刷新（进入时走 TTL：缓存新鲜则跳过）
         enterRefresh();
 
@@ -179,11 +170,54 @@ public class SessionListActivity extends Activity {
                     return true;
                 }
             });
-            wv.loadUrl(baseUrl + "/?token=" + token);
+            String enc;
+            try { enc = java.net.URLEncoder.encode(token, "UTF-8"); }
+            catch (Exception e) { enc = token; }
+            wv.loadUrl(baseUrl + "/?token=" + enc);
         } catch (Exception e) {
             Log.w("SessionList", "prewarm failed", e);
             prewarmWebView = null;
         }
+    }
+
+    /** singleTop 复用：换设备后重读当前主机并刷新（避免旧实例残留旧设备数据） */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        initHost();
+        List<SessionApi.SessionInfo> cached = cache.load(baseUrl);
+        allSessions = new ArrayList<>(cached);
+        adapter.refresh(cached);
+        if (cached.isEmpty()) {
+            statusText.setText(R.string.session_loading);
+        } else {
+            statusText.setText(getString(R.string.session_cached_at, fmtTime(cache.savedAtMs(baseUrl))));
+        }
+        enterRefresh();
+    }
+
+    /** 读取当前主机并初始化 baseUrl/token/标题（onCreate 与 onNewIntent 共用） */
+    private void initHost() {
+        TextView title = findViewById(R.id.session_title);
+        if (storage == null) return;
+        Storage.SavedHost host = storage.getCurrentHost();
+        if (host != null) {
+            baseUrl = trimTrailingSlash(host.url.contains("?")
+                    ? host.url.substring(0, host.url.indexOf('?')) : host.url);
+            token = extractToken(host.url);
+            if (title != null) title.setText(host.name);
+        } else if (title != null) {
+            title.setText(getString(R.string.app_name));
+        }
+    }
+
+    /** 去掉 URL 尾斜杠（统一 baseUrl 形态，避免 //api 双斜杠与缓存键不一致） */
+    private static String trimTrailingSlash(String url) {
+        if (url == null) return "";
+        String s = url;
+        while (s.endsWith("/")) s = s.substring(0, s.length() - 1);
+        return s;
     }
 
     /** 从完整 H5 URL 提取 token（?token=xxx）；URL 内为编码形式，取出后解码还原原始 token */
@@ -231,7 +265,7 @@ public class SessionListActivity extends Activity {
 
     /** 进入页面时的自动刷新：缓存新鲜（30 秒内）直接跳过，不打扰用户 */
     private void enterRefresh() {
-        long age = System.currentTimeMillis() - cache.savedAtMs();
+        long age = System.currentTimeMillis() - cache.savedAtMs(baseUrl);
         if (adapter.getCount() > 0 && age < CACHE_FRESH_MS) return;
         forceRefresh();
     }
@@ -252,7 +286,7 @@ public class SessionListActivity extends Activity {
         executor.execute(() -> {
             try {
                 List<SessionApi.SessionInfo> sessions = SessionApi.fetchSessions(url, tk);
-                cache.save(sessions);
+                cache.save(baseUrl, sessions);
                 mainHandler.post(() -> {
                     if (isFinishing() || isDestroyed()) return;
                     allSessions = new ArrayList<>(sessions);
@@ -266,7 +300,7 @@ public class SessionListActivity extends Activity {
                     if (adapter.getCount() == 0) {
                         statusText.setText(R.string.session_failed);
                     } else {
-                        statusText.setText(getString(R.string.session_cached_stale, fmtTime(cache.savedAtMs())));
+                        statusText.setText(getString(R.string.session_cached_stale, fmtTime(cache.savedAtMs(baseUrl))));
                         Toast.makeText(this, R.string.session_refresh_failed, Toast.LENGTH_SHORT).show();
                     }
                     swipe.setRefreshing(false);

@@ -18,8 +18,8 @@ public final class SessionCache {
 
     private static final String TAG = "SessionCache";
     private static final String PREFS = "session_cache";
-    private static final String KEY_JSON = "sessions_json";
-    private static final String KEY_SAVED_AT = "saved_at";
+    private static final String KEY_JSON = "sessions_json_";
+    private static final String KEY_SAVED_AT = "saved_at_";
     private static final int MAX_ITEMS = 200;
 
     private final SharedPreferences prefs;
@@ -28,7 +28,14 @@ public final class SessionCache {
         prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    public void save(List<SessionApi.SessionInfo> sessions) {
+    /** 缓存键按主机隔离：切换设备后不显示上一台设备的会话列表 */
+    private static String keyFor(String hostKey, String suffix) {
+        String safe = (hostKey == null || hostKey.isEmpty()) ? "default"
+                : hostKey.replaceAll("[^a-zA-Z0-9._-]", "_");
+        return suffix + safe;
+    }
+
+    public void save(String hostKey, List<SessionApi.SessionInfo> sessions) {
         try {
             JSONArray arr = new JSONArray();
             int n = Math.min(sessions.size(), MAX_ITEMS);
@@ -46,8 +53,8 @@ public final class SessionCache {
                 arr.put(o);
             }
             prefs.edit()
-                    .putString(KEY_JSON, arr.toString())
-                    .putLong(KEY_SAVED_AT, System.currentTimeMillis())
+                    .putString(keyFor(hostKey, KEY_JSON), arr.toString())
+                    .putLong(keyFor(hostKey, KEY_SAVED_AT), System.currentTimeMillis())
                     .apply();
         } catch (Exception e) {
             Log.e(TAG, "save failed", e);
@@ -55,10 +62,10 @@ public final class SessionCache {
     }
 
     /** 读取缓存（无缓存返回空列表） */
-    public List<SessionApi.SessionInfo> load() {
+    public List<SessionApi.SessionInfo> load(String hostKey) {
         List<SessionApi.SessionInfo> list = new ArrayList<>();
         try {
-            String json = prefs.getString(KEY_JSON, "");
+            String json = prefs.getString(keyFor(hostKey, KEY_JSON), "");
             if (json.isEmpty()) return list;
             JSONArray arr = new JSONArray(json);
             for (int i = 0; i < arr.length(); i++) {
@@ -72,7 +79,7 @@ public final class SessionCache {
         return list;
     }
 
-    public long savedAtMs() {
-        return prefs.getLong(KEY_SAVED_AT, 0);
+    public long savedAtMs(String hostKey) {
+        return prefs.getLong(keyFor(hostKey, KEY_SAVED_AT), 0);
     }
 }

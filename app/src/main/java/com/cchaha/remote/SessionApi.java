@@ -99,7 +99,7 @@ public final class SessionApi {
     /** 拉取会话列表。baseUrl 如 https://192.168.1.20:8080，token 为 H5 token。失败抛异常。 */
     public static List<SessionInfo> fetchSessions(String baseUrl, String token) throws Exception {
         String urlStr = baseUrl + "/api/sessions?limit=200";
-        String referer = baseUrl + "/?token=" + token;
+        String referer = baseUrl + "/?token=" + encodeToken(token);
         HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
         try {
             applyTrust(conn);
@@ -203,7 +203,7 @@ public final class SessionApi {
             conn.setConnectTimeout(TIMEOUT_MS);
             conn.setReadTimeout(120000); // 大会话需要更久
             conn.setRequestMethod("GET");
-            conn.setRequestProperty("Referer", baseUrl + "/?token=" + token);
+            conn.setRequestProperty("Referer", baseUrl + "/?token=" + encodeToken(token));
             conn.setRequestProperty("Authorization", "Bearer " + token);
             conn.setRequestProperty("Accept", "application/json");
             int code = conn.getResponseCode();
@@ -243,7 +243,7 @@ public final class SessionApi {
             conn.setConnectTimeout(30000);
             conn.setReadTimeout(60000); // 创建可能较慢（初始化工作区）
             conn.setRequestMethod("POST");
-            conn.setRequestProperty("Referer", baseUrl + "/?token=" + token);
+            conn.setRequestProperty("Referer", baseUrl + "/?token=" + encodeToken(token));
             conn.setRequestProperty("Authorization", "Bearer " + token);
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
@@ -303,7 +303,7 @@ public final class SessionApi {
                 conn.setConnectTimeout(10000);
                 conn.setReadTimeout(30000);
                 conn.setRequestMethod("POST");
-                conn.setRequestProperty("Referer", baseUrl + "/?token=" + token);
+                conn.setRequestProperty("Referer", baseUrl + "/?token=" + encodeToken(token));
                 conn.setRequestProperty("Authorization", "Bearer " + token);
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
@@ -317,6 +317,16 @@ public final class SessionApi {
         } catch (Exception e) {
             Log.w(TAG, "send failed", e);
             return false;
+        }
+    }
+
+    /** token 编码为 URL query 形式（Referer/prewarm 拼接用；Authorization 用原始 token） */
+    private static String encodeToken(String token) {
+        if (token == null) return "";
+        try {
+            return java.net.URLEncoder.encode(token, "UTF-8");
+        } catch (Exception e) {
+            return token;
         }
     }
 
@@ -334,7 +344,7 @@ public final class SessionApi {
                 conn.setConnectTimeout(8000);
                 conn.setReadTimeout(8000);
                 conn.setRequestMethod("GET");
-                conn.setRequestProperty("Referer", baseUrl + "/?token=" + token);
+                conn.setRequestProperty("Referer", baseUrl + "/?token=" + encodeToken(token));
                 conn.setRequestProperty("Authorization", "Bearer " + token);
                 return conn.getResponseCode() == 200;
             } finally {

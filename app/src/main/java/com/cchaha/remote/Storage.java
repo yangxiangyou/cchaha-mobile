@@ -55,11 +55,25 @@ public final class Storage {
             if (enc == null || enc.isEmpty()) return;
             String json = crypto.decrypt(enc);
             if (json == null) {
-                // 解密失败（密钥变化/数据损坏）：清除坏数据，避免每次启动重复失败
+                // 解密失败：可能是 keystore 降级期的明文存储（keystore 恢复后解密不匹配）。
+                // 先尝试按明文 JSON 解析，能解析则保留数据；否则才是真损坏，清除。
+                if (enc.startsWith("{")) {
+                    Log.w(TAG, "hosts stored plaintext (keystore was degraded) — reusing data");
+                    parseHostsJson(enc);
+                    return;
+                }
                 Log.w(TAG, "hosts decrypt failed, clearing corrupted data");
                 prefs.edit().remove(KEY_HOSTS_ENC).apply();
                 return;
             }
+            parseHostsJson(json);
+        } catch (Exception e) {
+            Log.e(TAG, "load hosts failed", e);
+        }
+    }
+
+    private void parseHostsJson(String json) {
+        try {
             JSONArray arr = new JSONArray(json);
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject o = arr.getJSONObject(i);
@@ -71,7 +85,7 @@ public final class Storage {
                 if (UrlUtils.isUsable(h.url)) hosts.add(h);
             }
         } catch (Exception e) {
-            Log.e(TAG, "load hosts failed", e);
+            Log.e(TAG, "parse hosts failed", e);
         }
     }
 

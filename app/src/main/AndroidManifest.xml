@@ -16,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <!-- 连接设置页：管理多台电脑地址，支持扫码与深链唤起 -->
+        <!-- 连接设置页：管理多台电脑地址（深链统一由 MainActivity 处理，避免双入口歧义） -->
         <activity
             android:name=".SetupActivity"
             android:exported="true"
@@ -25,13 +25,6 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="http" />
-                <data android:scheme="https" />
-            </intent-filter>
         </activity>
 
         <!-- 崩溃信息展示页 -->
@@ -39,10 +32,11 @@
             android:name=".CrashActivity"
             android:exported="false" />
 
-        <!-- 原生会话列表（Codex 式） -->
+        <!-- 原生会话列表（Codex 式；singleTop 避免换设备后返回旧实例的栈残留） -->
         <activity
             android:name=".SessionListActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:launchMode="singleTop" />
 
         <!-- 原生消息流（大会话，避免 WebView 超时） -->
         <activity

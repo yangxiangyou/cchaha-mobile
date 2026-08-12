@@ -110,6 +110,7 @@ public class SessionMessagesActivity extends Activity {
         if (host != null) {
             String url = host.url;
             baseUrl = url.contains("?") ? url.substring(0, url.indexOf('?')) : url;
+            while (baseUrl.endsWith("/")) baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
             int i = url.indexOf("token=");
             if (i >= 0) {
                 String rest = url.substring(i + 6);
@@ -207,8 +208,8 @@ public class SessionMessagesActivity extends Activity {
             executor.execute(() -> {
                 try {
                     String json = SessionApi.fetchMessagesJson(url, tk, sid);
-                    messageCache.save(sid, json);
                     List<SessionApi.Message> messages = SessionApi.parseMessages(json);
+                    messageCache.save(sid, json); // 解析成功后才写缓存
                     mainHandler.post(() -> {
                         if (isFinishing() || isDestroyed()) return;
                         // 新回复检测：消息变多且界面不在前台 → 通知
