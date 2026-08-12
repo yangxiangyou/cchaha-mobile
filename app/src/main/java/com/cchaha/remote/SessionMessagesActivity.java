@@ -63,7 +63,7 @@ public class SessionMessagesActivity extends Activity {
         @Override
         public void run() {
             if (loading) {
-                mainHandler.postDelayed(this, POLL_INTERVAL_MS);
+                mainHandler.postDelayed(this, visible ? POLL_INTERVAL_MS : POLL_INTERVAL_BG_MS);
                 return;
             }
             loadMessages();

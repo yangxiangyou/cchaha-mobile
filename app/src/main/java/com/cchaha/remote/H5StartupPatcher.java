@@ -105,7 +105,9 @@ public final class H5StartupPatcher {
                 conn.disconnect();
             }
         } catch (Exception e) {
-            Log.w(TAG, "fetch failed: " + url, e);
+            // 日志脱敏：去掉 query（含 token）
+            int q = url.indexOf('?');
+            Log.w(TAG, "fetch failed: " + (q > 0 ? url.substring(0, q) : url), e);
             return null;
         }
     }

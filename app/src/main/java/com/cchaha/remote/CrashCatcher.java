@@ -29,10 +29,12 @@ public final class CrashCatcher {
     public static void install(final Context context) {
         if (installed) return;
         installed = true;
+        // 静态 handler 长存进程：用 applicationContext，避免持 Activity 引用
+        final Context appCtx = context.getApplicationContext();
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
             try {
-                String stack = stackToString(throwable, context);
-                writeCrash(context, stack);
+                String stack = stackToString(throwable, appCtx);
+                writeCrash(appCtx, stack);
                 Log.e(TAG, stack);
 
                 // 跳转错误展示页（不调用系统默认处理——它会立即杀进程，错误页来不及显示）

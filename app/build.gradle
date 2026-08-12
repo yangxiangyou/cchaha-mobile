@@ -18,9 +18,9 @@ android {
         applicationId "com.cchaha.remote"
         minSdk 26
         targetSdk 34
-        // 注意：每次发版必须同步递增 versionCode 和 versionName（v1.0.6 = code 6）
-        versionCode 29
-        versionName "1.7.5"
+        // 注意：每次发版必须同步递增 versionCode 和 versionName（v1.7.x = code 2x）
+        versionCode 30
+        versionName "1.7.6"
     }
 
     signingConfigs {

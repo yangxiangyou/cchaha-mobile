@@ -77,11 +77,6 @@ public class SetupActivity extends Activity {
             return;
         }
 
-        // 已有地址时的快捷入口
-        if (!storage.getHosts().isEmpty() && manual) {
-            // 从主界面回来：显示列表即可
-        }
-
         hint.setText(R.string.setup_hint);
 
         adapter = new HostAdapter(storage, storage.getHosts());

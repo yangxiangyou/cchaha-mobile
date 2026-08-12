@@ -161,14 +161,11 @@ public class MainActivity extends Activity {
         }
 
         // 深链：外部 URL 唤起（浏览器点 H5 链接 / haha:// 协议）
+        // 安全：已保存主机直接连；未知主机需用户确认（防恶意深链注入白名单）
         Uri data = getIntent().getData();
         if (data != null && UrlUtils.isUsable(data.toString())) {
-            Storage.SavedHost host = storage.upsertHost(data.toString());
-            if (host != null) {
-                storage.setCurrentHost(host.id);
-                loadUrl(host.url);
-                return;
-            }
+            handleDeepLink(data);
+            return;
         }
 
         Storage.SavedHost current = storage.getCurrentHost();
@@ -306,9 +303,9 @@ public class MainActivity extends Activity {
                 errorState = false;
                 mainFrameFailCount = 0;
                 setConnState(ConnState.CONNECTED);
-                // 仅回填真实 http(s) URL（错误页等 data: URL 不回填）
+                // 仅回填真实 http(s) URL（错误页等 data: URL 不回填），脱敏显示
                 if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
-                    urlInput.setText(url);
+                    urlInput.setText(displayUrl(url));
                 }
                 refreshButtons();
                 injectNarrowScreenFix();
@@ -499,11 +496,18 @@ public class MainActivity extends Activity {
             Storage.SavedHost host = storage.upsertHost(url);
             if (host != null) storage.setCurrentHost(host.id);
         }
-        urlInput.setText(url);
+        urlInput.setText(displayUrl(url));
         errorState = false;
         mainFrameFailCount = 0;
         setConnState(ConnState.CONNECTING);
         webView.loadUrl(url);
+    }
+
+    /** 地址栏脱敏显示：去掉 query（含 token），防截屏/录屏泄露 */
+    private static String displayUrl(String url) {
+        if (url == null) return "";
+        int q = url.indexOf('?');
+        return q > 0 ? url.substring(0, q) : url;
     }
 
     private void showErrorPage() {
@@ -574,12 +578,51 @@ public class MainActivity extends Activity {
         // 单例模式深链再次唤起
         Uri data = intent.getData();
         if (data != null && UrlUtils.isUsable(data.toString())) {
-            Storage.SavedHost host = storage.upsertHost(data.toString());
-            if (host != null) {
-                storage.setCurrentHost(host.id);
-                loadUrl(host.url);
-            }
+            handleDeepLink(data);
         }
+    }
+
+    /** 深链处理：已保存主机直接连；未知主机弹确认（临时连接，不自动保存） */
+    private void handleDeepLink(Uri data) {
+        final String url = data.toString();
+        String host = data.getHost();
+        boolean known = host != null && hostSaved(host);
+        if (known) {
+            loadUrl(url);
+            return;
+        }
+        if (isFinishing() || isDestroyed()) return;
+        new android.app.AlertDialog.Builder(this)
+                .setTitle(R.string.deeplink_confirm_title)
+                .setMessage(getString(R.string.deeplink_confirm_msg, host == null ? url : host))
+                .setPositiveButton(R.string.deeplink_confirm_ok, (d, w) -> loadUrlTemporary(url))
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    /** 主机是否已保存（白名单判断用） */
+    private boolean hostSaved(String host) {
+        if (storage == null) return false;
+        try {
+            List<Storage.SavedHost> hosts = storage.getHosts();
+            for (Storage.SavedHost h : hosts) {
+                String hh = android.net.Uri.parse(h.url).getHost();
+                if (hh != null && hh.equalsIgnoreCase(host)) return true;
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "hostSaved failed", e);
+        }
+        return false;
+    }
+
+    /** 临时加载（深链未确认主机）：不保存、不设当前主机 */
+    private void loadUrlTemporary(String url) {
+        currentUrl = url;
+        urlInput.setText(displayUrl(url));
+        errorState = false;
+        mainFrameFailCount = 0;
+        setConnState(ConnState.CONNECTING);
+        webView.loadUrl(url);
     }
 
     @Override

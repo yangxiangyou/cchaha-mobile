@@ -55,4 +55,9 @@
     <string name="msg_full_version">Full version</string>
     <string name="msg_empty">No messages yet — send the first one</string>
     <string name="msg_conn_loading">Connecting to your computer…</string>
+    <string name="deeplink_confirm_title">Connect to a new address?</string>
+    <string name="deeplink_confirm_msg">%1$s
+
+This address has not been saved. Connect anyway? (It will not be saved.)</string>
+    <string name="deeplink_confirm_ok">Connect</string>
 </resources>

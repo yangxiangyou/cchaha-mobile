@@ -55,4 +55,9 @@
     <string name="msg_full_version">完整版</string>
     <string name="msg_empty">暂无消息，发送第一条吧</string>
     <string name="msg_conn_loading">正在连接电脑…</string>
+    <string name="deeplink_confirm_title">连接到新地址？</string>
+    <string name="deeplink_confirm_msg">%1$s
+
+这个地址还没有保存过。确认后连接（不会自动保存）。</string>
+    <string name="deeplink_confirm_ok">连接</string>
 </resources>
