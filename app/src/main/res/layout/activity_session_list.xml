@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 会话列表页：浅色原版风（白底 + 墨色文字 + 朱红主按钮，与首页统一） -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#111418">
+    android:background="@color/cc_bg">
 
     <!-- 标题栏 -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="52dp"
+        android:layout_height="56dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="8dp">
+        android:paddingStart="20dp"
+        android:paddingEnd="12dp">
 
         <TextView
             android:id="@+id/session_title"
@@ -20,7 +21,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/app_name"
-            android:textColor="#E6E6E6"
+            android:textColor="@color/cc_ink"
             android:textSize="17sp"
             android:textStyle="bold"
             android:singleLine="true"
@@ -32,25 +33,27 @@
             android:layout_height="38dp"
             android:text="刷新"
             android:textSize="13sp"
-            android:background="@drawable/btn_secondary"
-            android:textColor="#4DA3FF" />
+            android:background="@drawable/btn_home_secondary"
+            android:textColor="@color/cc_brand" />
     </LinearLayout>
 
     <!-- 搜索框 -->
     <EditText
         android:id="@+id/session_search"
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="46dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="6dp"
-        android:background="@drawable/url_bg"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:textColor="#E6E6E6"
-        android:textColorHint="#66707A"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/url_bg_home"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:textColor="@color/cc_ink"
+        android:textColorHint="@color/cc_hint"
         android:textSize="13sp"
         android:singleLine="true"
+        android:drawableStart="@drawable/ic_search"
+        android:drawablePadding="8dp"
         android:hint="搜索会话…" />
 
     <!-- 状态行 -->
@@ -58,11 +61,11 @@
         android:id="@+id/session_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
         android:paddingBottom="8dp"
         android:textSize="12sp"
-        android:textColor="#66707A" />
+        android:textColor="@color/cc_secondary" />
 
     <!-- 会话列表（支持下拉刷新） -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -75,15 +78,14 @@
             android:id="@+id/session_list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:divider="#1E242C"
-            android:dividerHeight="1dp"
+            android:divider="@null"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:clipToPadding="false"
             android:paddingBottom="8dp" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- 底部按钮 -->
+    <!-- 底部按钮：原生新建会话（朱红胶囊） -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -93,10 +95,11 @@
         <Button
             android:id="@+id/session_new"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="52dp"
             android:text="＋ 新建会话"
             android:textSize="15sp"
-            android:background="@drawable/btn_primary"
+            android:textStyle="bold"
+            android:background="@drawable/btn_home_primary"
             android:textColor="#FFFFFF" />
     </LinearLayout>
 </LinearLayout>

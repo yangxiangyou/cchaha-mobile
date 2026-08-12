@@ -190,6 +190,38 @@ public final class SessionApi {
         return list;
     }
 
+    /** 创建会话（workDir 可空，留空用服务端默认目录）；返回 sessionId，失败抛异常 */
+    public static String createSession(String baseUrl, String token, String workDir) throws Exception {
+        String urlStr = baseUrl + "/api/sessions";
+        HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
+        try {
+            conn.setConnectTimeout(TIMEOUT_MS);
+            conn.setReadTimeout(TIMEOUT_MS);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Referer", baseUrl + "/?token=" + token);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+            String body = (workDir == null || workDir.trim().isEmpty())
+                    ? "{}"
+                    : "{\"workDir\":\"" + escapeJson(workDir.trim()) + "\"}";
+            conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
+            int code = conn.getResponseCode();
+            if (code != 200 && code != 201) throw new Exception("API 返回 " + code);
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+            }
+            JSONObject root = new JSONObject(sb.toString());
+            String sid = root.optString("sessionId", "");
+            if (sid.isEmpty()) throw new Exception("响应缺少 sessionId");
+            return sid;
+        } finally {
+            conn.disconnect();
+        }
+    }
+
     /** 发送消息（202 异步接受） */
     public static boolean sendMessage(String baseUrl, String token, String sessionId, String content) {
         try {

@@ -34,6 +34,12 @@
     <string name="session_refreshing">正在刷新…</string>
     <string name="session_failed">无法连接服务器，请检查电脑上的 cc-haha 是否在运行</string>
     <string name="session_no_host">请先在连接页配置地址</string>
+    <string name="create_session_title">新建会话</string>
+    <string name="create_workdir_hint">项目路径（可空，留空用默认目录）</string>
+    <string name="create_session_ok">创建</string>
+    <string name="create_session_creating">正在创建会话…</string>
+    <string name="create_session_new">新会话</string>
+    <string name="create_session_failed">创建失败，服务器无响应</string>
     <string name="session_updated">已更新 · %1$s</string>
     <string name="session_cached_at">缓存于 %1$s</string>
     <string name="session_cached_stale">服务器无响应，显示缓存（%1$s）</string>

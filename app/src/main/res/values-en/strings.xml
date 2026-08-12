@@ -34,6 +34,12 @@
     <string name="session_refreshing">Refreshing…</string>
     <string name="session_failed">Cannot reach server — is cc-haha running on the computer?</string>
     <string name="session_no_host">Configure an address in the connect page first</string>
+    <string name="create_session_title">New session</string>
+    <string name="create_workdir_hint">Project path (optional, default dir if empty)</string>
+    <string name="create_session_ok">Create</string>
+    <string name="create_session_creating">Creating session…</string>
+    <string name="create_session_new">New session</string>
+    <string name="create_session_failed">Create failed — server not responding</string>
     <string name="session_updated">Updated · %1$s</string>
     <string name="session_cached_at">Cached at %1$s</string>
     <string name="session_cached_stale">Server offline, showing cache (%1$s)</string>

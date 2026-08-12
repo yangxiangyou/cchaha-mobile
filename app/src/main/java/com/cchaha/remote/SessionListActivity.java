@@ -58,8 +58,12 @@ public class SessionListActivity extends Activity {
         super.onCreate(savedInstanceState);
         CrashCatcher.install(this);
         Window w = getWindow();
-        w.setStatusBarColor(0xFF111418);
-        w.setNavigationBarColor(0xFF111418);
+        // 浅色列表页：白底 + 深色状态栏图标（与首页视觉统一）
+        w.setStatusBarColor(0xFFFFFFFF);
+        w.setNavigationBarColor(0xFFFFFFFF);
+        w.getDecorView().setSystemUiVisibility(
+                android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                        | android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         setContentView(R.layout.activity_session_list);
 
         storage = new Storage(this);
@@ -98,7 +102,7 @@ public class SessionListActivity extends Activity {
         enterRefresh();
 
         refresh.setOnClickListener(v -> forceRefresh());
-        newSession.setOnClickListener(v -> openMain(null, null));
+        newSession.setOnClickListener(v -> showCreateSessionDialog());
 
         // 搜索过滤
         searchBox.addTextChangedListener(new android.text.TextWatcher() {
@@ -181,6 +185,44 @@ public class SessionListActivity extends Activity {
         return j > 0 ? rest.substring(0, j) : rest;
     }
 
+    /** 原生创建会话：对话框输入项目路径（可空）→ API 直建 → 直接进消息页（免 WebView 黑屏） */
+    private void showCreateSessionDialog() {
+        EditText input = new EditText(this);
+        input.setSingleLine(true);
+        input.setHint(R.string.create_workdir_hint);
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
+        new android.app.AlertDialog.Builder(this)
+                .setTitle(R.string.create_session_title)
+                .setView(input)
+                .setPositiveButton(R.string.create_session_ok, (d, w) -> {
+                    final String workDir = input.getText().toString().trim();
+                    final String url = baseUrl, tk = token;
+                    statusText.setText(R.string.create_session_creating);
+                    executor.execute(() -> {
+                        try {
+                            final String sid = SessionApi.createSession(url, tk, workDir);
+                            mainHandler.post(() -> {
+                                if (isFinishing() || isDestroyed()) return;
+                                statusText.setText("");
+                                Intent i = new Intent(this, SessionMessagesActivity.class);
+                                i.putExtra(SessionMessagesActivity.EXTRA_SESSION_ID, sid);
+                                i.putExtra(SessionMessagesActivity.EXTRA_SESSION_TITLE,
+                                        getString(R.string.create_session_new));
+                                startActivity(i);
+                            });
+                        } catch (Exception e) {
+                            mainHandler.post(() -> {
+                                if (isFinishing() || isDestroyed()) return;
+                                statusText.setText(R.string.create_session_failed);
+                                Toast.makeText(this, R.string.create_session_failed, Toast.LENGTH_SHORT).show();
+                            });
+                        }
+                    });
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
     /** 进入页面时的自动刷新：缓存新鲜（30 秒内）直接跳过，不打扰用户 */
     private void enterRefresh() {
         long age = System.currentTimeMillis() - cache.savedAtMs();
@@ -223,14 +265,6 @@ public class SessionListActivity extends Activity {
                 });
             }
         });
-    }
-
-    /** 打开主界面（WebView）。带 sessionId+title 时页面加载后尝试自动定位该会话 */
-    private void openMain(String sessionId, String title) {
-        Intent i = new Intent(this, MainActivity.class);
-        if (sessionId != null) i.putExtra(MainActivity.EXTRA_OPEN_SESSION, sessionId);
-        if (title != null) i.putExtra(MainActivity.EXTRA_SESSION_TITLE, title);
-        startActivity(i);
     }
 
     private String fmtTime(long ms) {
