@@ -73,6 +73,6 @@ jobs:
           RELEASE_APK=$(ls app/build/outputs/apk/release/*.apk 2>/dev/null | head -1)
           if [ -n "$RELEASE_APK" ]; then
             gh release create "${{ github.ref_name }}" "$RELEASE_APK" \
-              --title "Haha Remote ${{ github.ref_name }}" \
+              --title "cchaha Mobile ${{ github.ref_name }}" \
               --notes "Release ${{ github.ref_name }} — see README for install & usage."
           fi

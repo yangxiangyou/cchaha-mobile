@@ -34,7 +34,7 @@ import android.widget.Toast;
 
 
 /**
- * Haha Remote - 主界面
+ * cchaha Mobile - 主界面
  * WebView 全屏加载电脑上 cc-haha 的 H5 地址，实现 Codex 手机端式遥控。
  *
  * 功能：扫码连接 / 深链唤起 / 状态指示 / 自动重连 / 锁屏保持 / 断网提示 /

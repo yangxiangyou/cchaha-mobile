@@ -89,7 +89,7 @@ public final class CrashCatcher {
     private static String stackToString(Throwable t, Context context) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
-        pw.println("===== Haha Remote Crash " +
+        pw.println("===== cchaha Mobile Crash " +
                 new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date()) + " =====");
         pw.println("Device: " + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL);
         pw.println("Android: " + android.os.Build.VERSION.RELEASE + " (API " + android.os.Build.VERSION.SDK_INT + ")");

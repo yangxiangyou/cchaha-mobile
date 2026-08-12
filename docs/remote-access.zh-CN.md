@@ -36,7 +36,7 @@
    `http://172.16.x.x:50287/?token=xxxxx` 的链接
 2. 把这个链接里 **`http://172.16.x.x:50287`** 这部分，替换成刚才复制的 **`https://xxx.trycloudflare.com`**，得到：
    `https://xxx.trycloudflare.com/?token=xxxxx`
-3. 手机打开 Haha Remote → 粘贴这个替换好的地址 → 连接
+3. 手机打开 cchaha Mobile → 粘贴这个替换好的地址 → 连接
 
 > 提示：token 部分（`?token=xxxxx`）很重要，不能丢。
 

@@ -17,7 +17,7 @@
     <string name="scan_cancel">取消</string>
     <string name="no_flash">该设备没有闪光灯</string>
     <string name="scan_perm_title">需要相机权限</string>
-    <string name="scan_perm_msg">Haha Remote 需要相机来扫描电脑屏幕上的二维码。请到系统设置里允许相机权限。</string>
+    <string name="scan_perm_msg">cchaha Mobile 需要相机来扫描电脑屏幕上的二维码。请到系统设置里允许相机权限。</string>
     <string name="scan_perm_go_settings">去设置开启</string>
     <string name="scan_retry">重试</string>
     <string name="scan_error_detail">相机启动失败。\n原因：%1$s\n\n如果反复出现，可能是相机正被其他应用占用，或被系统禁止。</string>

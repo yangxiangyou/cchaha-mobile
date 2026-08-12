@@ -165,7 +165,7 @@ start "" /min frpc.exe -c frpc.toml
 
 ## 验证
 
-手机浏览器直接打开 `https://your-domain.com/?token=xxx`（token 从电脑 cc-haha 的 Copy launch URL 复制），能打开页面即全部就绪。然后在 Haha Remote App 里输入同样地址。
+手机浏览器直接打开 `https://your-domain.com/?token=xxx`（token 从电脑 cc-haha 的 Copy launch URL 复制），能打开页面即全部就绪。然后在 cchaha Mobile App 里输入同样地址。
 
 ## 排错
 
