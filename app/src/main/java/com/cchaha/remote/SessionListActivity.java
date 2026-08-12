@@ -170,12 +170,29 @@ public class SessionListActivity extends Activity {
                     return true;
                 }
             });
-            String enc;
-            try { enc = java.net.URLEncoder.encode(token, "UTF-8"); }
-            catch (Exception e) { enc = token; }
-            wv.loadUrl(baseUrl + "/?token=" + enc);
+            wv.loadUrl(buildFullUrl());
         } catch (Exception e) {
             Log.w("SessionList", "prewarm failed", e);
+            prewarmWebView = null;
+        }
+    }
+
+    /** 拼完整加载 URL（token 编码；无 token 时用原样地址，避免拼出 "?token=" 空参数） */
+    private String buildFullUrl() {
+        if (baseUrl.isEmpty()) return "";
+        if (token.isEmpty()) return baseUrl;
+        String enc;
+        try { enc = java.net.URLEncoder.encode(token, "UTF-8"); }
+        catch (Exception e) { enc = token; }
+        return baseUrl + "/?token=" + enc;
+    }
+
+    /** 离开列表页即停止预热：避免与 MainActivity 同时加载同一 host（带宽翻倍） */
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (prewarmWebView != null) {
+            try { prewarmWebView.destroy(); } catch (Exception ignored) { }
             prewarmWebView = null;
         }
     }

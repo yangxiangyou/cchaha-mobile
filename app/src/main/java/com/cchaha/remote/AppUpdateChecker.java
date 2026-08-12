@@ -106,7 +106,10 @@ public final class AppUpdateChecker {
                         Log.w(TAG, "endpoint failed: " + endpoint, e);
                     }
                 }
-                if (!ok) return; // 全部失败静默
+                if (!ok) {
+                    checked = false; // 全部失败：复位，下次进入可重试（断网不永久禁用）
+                    return;
+                }
 
                 String current = context.getPackageManager()
                         .getPackageInfo(context.getPackageName(), 0).versionName;

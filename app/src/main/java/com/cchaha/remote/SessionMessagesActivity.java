@@ -181,8 +181,14 @@ public class SessionMessagesActivity extends Activity {
                         if (isFinishing() || isDestroyed()) return;
                         if (ok) {
                             statusText.setText(R.string.msg_sent);
-                            // 5 秒后自动刷新拿回复
-                            mainHandler.postDelayed(this::loadMessages, 5000);
+                            // 5 秒后自动刷新拿回复；若届时正在拉取则重排，保证不丢
+                            mainHandler.postDelayed(() -> {
+                                if (loading) {
+                                    mainHandler.postDelayed(this::loadMessages, 5000);
+                                    return;
+                                }
+                                loadMessages();
+                            }, 5000);
                         } else {
                             statusText.setText(R.string.msg_send_failed);
                             Toast.makeText(this, R.string.msg_send_failed, Toast.LENGTH_SHORT).show();
@@ -212,6 +218,8 @@ public class SessionMessagesActivity extends Activity {
                     messageCache.save(sid, json); // 解析成功后才写缓存
                     mainHandler.post(() -> {
                         if (isFinishing() || isDestroyed()) return;
+                        // 会话已切换（onNewIntent）：旧会话的拉取结果不得覆盖新会话
+                        if (!sid.equals(sessionId)) return;
                         // 新回复检测：消息变多且界面不在前台 → 通知
                         if (lastMessageCount > 0 && messages.size() > lastMessageCount && !visible) {
                             notifyNewReply(messages.size() - lastMessageCount);
@@ -219,10 +227,10 @@ public class SessionMessagesActivity extends Activity {
                         lastMessageCount = messages.size();
                         adapter.refresh(messages);
                         statusText.setText(getString(R.string.msg_updated, messages.size()));
-                        // 仅在用户已接近底部时跟随滚动（浏览历史时不打扰）
+                        // 仅在用户已接近底部时跟随滚动（浏览历史时不打扰）；未布局视为底部
                         if (messages.size() > 0) {
                             int last = messageList.getLastVisiblePosition();
-                            if (last >= messages.size() - 4) {
+                            if (last < 0 || last >= messages.size() - 4) {
                                 messageList.setSelection(messages.size() - 1);
                             }
                         }
@@ -232,6 +240,7 @@ public class SessionMessagesActivity extends Activity {
                 } catch (Exception e) {
                     mainHandler.post(() -> {
                         if (isFinishing() || isDestroyed()) return;
+                        if (!sid.equals(sessionId)) return;
                         if (adapter.getCount() == 0) {
                             statusText.setText(R.string.msg_failed);
                             Toast.makeText(this, R.string.msg_failed, Toast.LENGTH_SHORT).show();
@@ -260,8 +269,10 @@ public class SessionMessagesActivity extends Activity {
             intent.putExtra(EXTRA_SESSION_ID, sessionId);
             intent.putExtra(EXTRA_SESSION_TITLE, sessionTitle);
             intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            // requestCode 按会话区分：不同会话的通知点击互不串扰
+            int reqCode = sessionId == null ? 0 : sessionId.hashCode();
             android.app.PendingIntent pi = android.app.PendingIntent.getActivity(
-                    this, 0, intent,
+                    this, reqCode, intent,
                     android.app.PendingIntent.FLAG_UPDATE_CURRENT
                             | android.app.PendingIntent.FLAG_IMMUTABLE);
             android.app.Notification.Builder b = new android.app.Notification.Builder(this)
@@ -319,6 +330,8 @@ public class SessionMessagesActivity extends Activity {
         TextView title = findViewById(R.id.msg_title);
         if (title != null) title.setText(sessionTitle.isEmpty() ? "会话" : sessionTitle);
         lastMessageCount = 0;
+        adapter.expandedIds.clear(); // 折叠状态不跨会话残留
+        loading = false;             // 释放旧会话的拉取锁，立即拉新会话
         adapter.refresh(new ArrayList<>());
         statusText.setText(R.string.msg_loading);
         loadMessages();

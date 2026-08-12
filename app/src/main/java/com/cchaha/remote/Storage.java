@@ -48,6 +48,12 @@ public final class Storage {
         loadHosts();
     }
 
+    /** 从持久层重读（Activity onResume 时调用，避免多实例内存列表互相覆盖的 lost update） */
+    public void reload() {
+        hosts.clear();
+        loadHosts();
+    }
+
     private void loadHosts() {
         hosts.clear();
         try {
@@ -56,8 +62,8 @@ public final class Storage {
             String json = crypto.decrypt(enc);
             if (json == null) {
                 // 解密失败：可能是 keystore 降级期的明文存储（keystore 恢复后解密不匹配）。
-                // 先尝试按明文 JSON 解析，能解析则保留数据；否则才是真损坏，清除。
-                if (enc.startsWith("{")) {
+                // 先尝试按明文 JSON 解析（对象 { 或数组 [ 均可能），能解析则保留数据；否则才是真损坏，清除。
+                if (enc.startsWith("{") || enc.startsWith("[")) {
                     Log.w(TAG, "hosts stored plaintext (keystore was degraded) — reusing data");
                     parseHostsJson(enc);
                     return;

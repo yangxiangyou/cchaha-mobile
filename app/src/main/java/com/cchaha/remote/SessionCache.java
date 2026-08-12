@@ -26,6 +26,10 @@ public final class SessionCache {
 
     public SessionCache(Context context) {
         prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        // v1.8.1 升级：清理旧版无主机前缀的孤儿缓存键
+        if (prefs.contains("sessions_json") || prefs.contains("saved_at")) {
+            prefs.edit().remove("sessions_json").remove("saved_at").apply();
+        }
     }
 
     /** 缓存键按主机隔离：切换设备后不显示上一台设备的会话列表 */

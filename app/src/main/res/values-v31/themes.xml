@@ -2,10 +2,10 @@
 <resources>
     <!-- Android 12+ 原生启动画面：品牌色背景 -->
     <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">#111418</item>
+        <item name="android:windowBackground">#FFFFFF</item>
         <item name="android:colorAccent">#4DA3FF</item>
-        <item name="android:windowSplashScreenBackground">#111418</item>
+        <item name="android:windowSplashScreenBackground">#FFFFFF</item>
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
-        <item name="android:windowSplashScreenIconBackgroundColor">#4DA3FF</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">#96442B</item>
     </style>
 </resources>

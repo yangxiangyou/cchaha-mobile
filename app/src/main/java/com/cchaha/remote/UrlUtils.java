@@ -44,10 +44,12 @@ public final class UrlUtils {
         if (authority.isEmpty()) return false;
 
         String hostPart = authority;
-        if (authority.contains(":")) {
-            // 去掉端口（IPv6 用 [] 包裹，[] 保留在 hostPart 里做宽松匹配）
+        // IPv6：[::1] 形式整体作 host（以 ] 结尾则不再解析端口）
+        if (authority.endsWith("]")) {
+            hostPart = authority;
+        } else if (authority.contains(":")) {
+            // 普通 host:port：去掉端口（端口必须是 1-65535 的数字）
             hostPart = authority.substring(0, authority.lastIndexOf(':'));
-            // 端口必须是 1-65535 的数字（"host:abc"、":99999" 非法）
             String port = authority.substring(authority.lastIndexOf(':') + 1);
             if (!port.matches("\\d{1,5}")) return false;
             try {

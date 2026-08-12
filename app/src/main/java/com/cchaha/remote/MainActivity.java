@@ -54,6 +54,7 @@ public class MainActivity extends Activity {
 
     private String pendingSessionId = null;
     private String pendingSessionTitle = null;
+    private android.app.AlertDialog deepLinkDialog = null;
 
     enum ConnState { CONNECTING, CONNECTED, ERROR, DISCONNECTED }
 
@@ -73,6 +74,7 @@ public class MainActivity extends Activity {
     private String currentUrl = "";
     private boolean errorState = false;
     private int mainFrameFailCount = 0;
+    private int loadGeneration = 0; // 加载代际：用户新操作使旧重连/回调失效
     private boolean screenOn = true;
     private boolean netDownNotified = false;
     private ConnState connState = ConnState.DISCONNECTED;
@@ -187,10 +189,12 @@ public class MainActivity extends Activity {
      */
     private void openSessionDrawer() {
         if (webView == null) return;
+        // window 标记去重：页面多次 onPageFinished（重定向等）不会叠加轮询
         webView.evaluateJavascript(
-                "(function(){var n=0,t=setInterval(function(){" +
+                "(function(){if(window.__hahaDrawerOpened)return;" +
+                "var n=0,t=setInterval(function(){" +
                 "var b=document.querySelector('[data-testid=\"mobile-sidebar-toggle\"]');" +
-                "if(b){clearInterval(t);b.click();return;}" +
+                "if(b){clearInterval(t);b.click();window.__hahaDrawerOpened=true;return;}" +
                 "if(++n>150)clearInterval(t);},200);})();", null);
     }
 
@@ -206,16 +210,16 @@ public class MainActivity extends Activity {
         // 转义为 JS 字符串字面量（防会话名注入脚本）
         final String match = org.json.JSONObject.quote(target);
         final String sid = org.json.JSONObject.quote(pendingSessionId);
-        pendingSessionId = null;
-        pendingSessionTitle = null;
+        // pending 保留到 JS 侧确认成功（window 标记）：页面 reload/回退后仍可重试定位
         webView.evaluateJavascript(
-                "(function(){var target=" + match + ",sid=" + sid + ",steps=0;" +
+                "(function(){if(window.__hahaAutoOpened)return;" +
+                "var target=" + match + ",sid=" + sid + ",steps=0;" +
                 "var t=setInterval(function(){steps++;" +
                 "if(!window.__hahaPicked){var pk=[...document.querySelectorAll('button')].find(function(b){return /选择项目/.test(b.textContent||'')});" +
                 "if(pk){pk.click();window.__hahaPicked=true;}}" +
                 "var it=[...document.querySelectorAll('[class*=\"cursor-pointer\"],button')].find(function(e){" +
                 "var x=(e.textContent||'').trim();return x.length>4&&x.length<80&&(x.indexOf(target.slice(0,12))>=0||target.indexOf(x.slice(0,10))>=0);});" +
-                "if(it){it.click();clearInterval(t);}" +
+                "if(it){it.click();window.__hahaAutoOpened=true;clearInterval(t);}" +
                 "if(steps>40)clearInterval(t);},1000);})();", null);
     }
 
@@ -300,17 +304,23 @@ public class MainActivity extends Activity {
             public void onPageFinished(WebView view, String url) {
                 progress.setVisibility(View.GONE);
                 if (loadingMask != null) loadingMask.setVisibility(View.GONE);
-                errorState = false;
-                mainFrameFailCount = 0;
-                setConnState(ConnState.CONNECTED);
-                // 仅回填真实 http(s) URL（错误页等 data: URL 不回填），脱敏显示
-                if (url != null && (url.startsWith("http://") || url.startsWith("https://"))) {
+                boolean isHttp = url != null && (url.startsWith("http://") || url.startsWith("https://"));
+                // 仅真实页面（含与当前加载一致的 URL）才算连接成功；
+                // 错误页（data: URL）不重置错误态，避免"假绿灯"掩盖失败
+                if (isHttp && url.equals(currentUrl)) {
+                    errorState = false;
+                    mainFrameFailCount = 0;
+                    setConnState(ConnState.CONNECTED);
                     urlInput.setText(displayUrl(url));
+                } else if (errorState) {
+                    setConnState(ConnState.ERROR);
                 }
                 refreshButtons();
-                injectNarrowScreenFix();
-                openSessionDrawer();
-                autoOpenSession();
+                if (isHttp) {
+                    injectNarrowScreenFix();
+                    openSessionDrawer();
+                    autoOpenSession();
+                }
             }
 
             @Override
@@ -321,11 +331,16 @@ public class MainActivity extends Activity {
                 if (loadingMask != null) loadingMask.setVisibility(View.GONE);
                 mainFrameFailCount++;
 
-                // 自动重连一次：可能是临时闪断
+                // 自动重连一次：可能是临时闪断（带代际标记，用户操作后旧重连不生效）
                 if (mainFrameFailCount <= 1 && !isFinishing() && !currentUrl.isEmpty()) {
                     setConnState(ConnState.CONNECTING);
+                    final int gen = ++loadGeneration;
+                    final String retryUrl = currentUrl;
                     view.postDelayed(() -> {
-                        if (!isFinishing() && !currentUrl.isEmpty()) loadUrl(currentUrl);
+                        if (!isFinishing() && gen == loadGeneration
+                                && !currentUrl.isEmpty() && retryUrl.equals(currentUrl)) {
+                            loadUrl(retryUrl);
+                        }
                     }, 2000);
                     return;
                 }
@@ -492,6 +507,7 @@ public class MainActivity extends Activity {
 
     private void loadUrl(String url) {
         currentUrl = url;
+        loadGeneration++; // 新加载使旧的重连/回调失效
         if (storage != null) {
             Storage.SavedHost host = storage.upsertHost(url);
             if (host != null) storage.setCurrentHost(host.id);
@@ -592,12 +608,18 @@ public class MainActivity extends Activity {
             return;
         }
         if (isFinishing() || isDestroyed()) return;
-        new android.app.AlertDialog.Builder(this)
+        // 对话框互斥：连续深链不叠加
+        if (deepLinkDialog != null && deepLinkDialog.isShowing()) {
+            deepLinkDialog.setMessage(getString(R.string.deeplink_confirm_msg, host == null ? url : host));
+            return;
+        }
+        deepLinkDialog = new android.app.AlertDialog.Builder(this)
                 .setTitle(R.string.deeplink_confirm_title)
                 .setMessage(getString(R.string.deeplink_confirm_msg, host == null ? url : host))
                 .setPositiveButton(R.string.deeplink_confirm_ok, (d, w) -> loadUrlTemporary(url))
                 .setNegativeButton(android.R.string.cancel, null)
-                .show();
+                .create();
+        deepLinkDialog.show();
     }
 
     /** 主机是否已保存（白名单判断用） */
@@ -623,6 +645,13 @@ public class MainActivity extends Activity {
         mainFrameFailCount = 0;
         setConnState(ConnState.CONNECTING);
         webView.loadUrl(url);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 从设备页返回/其他页面修改过主机：重读最新列表，避免旧内存列表覆盖新改动
+        if (storage != null) storage.reload();
     }
 
     @Override
