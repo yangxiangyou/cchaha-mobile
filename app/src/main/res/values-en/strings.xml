@@ -2,7 +2,9 @@
 <resources>
     <string name="app_name">cchaha Mobile</string>
     <string name="setup_subtitle">Remote control for cc-haha desktop sessions</string>
-    <string name="url_hint">Paste H5 link from your computer</string>
+    <string name="url_hint">Address (e.g. https://82.157.189.235)</string>
+    <string name="token_hint">token (the part after ?token= in Copy launch URL)</string>
+    <string name="token_required">Please fill in the token (or paste the full link into the address field)</string>
     <string name="action_connect">Connect</string>
     <string name="action_scan">📷 Scan QR</string>
     <string name="action_rename">Rename</string>

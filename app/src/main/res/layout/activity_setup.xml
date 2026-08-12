@@ -55,8 +55,24 @@
             android:textSize="14sp"
             android:singleLine="true"
             android:inputType="textUri"
-            android:imeOptions="actionGo"
+            android:imeOptions="actionNext"
             android:hint="@string/url_hint" />
+
+        <EditText
+            android:id="@+id/setup_token"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/url_bg"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:textColor="#E6E6E6"
+            android:textColorHint="#66707A"
+            android:textSize="14sp"
+            android:singleLine="true"
+            android:inputType="text"
+            android:imeOptions="actionGo"
+            android:hint="@string/token_hint" />
 
         <LinearLayout
             android:layout_width="match_parent"

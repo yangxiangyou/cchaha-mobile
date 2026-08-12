@@ -180,6 +180,20 @@ public class MainActivity extends Activity {
     }
 
     /**
+     * 移动端 H5 的会话列表是默认收起的抽屉（汉堡按钮）：
+     * 注入 JS 自动点开，让用户一进 WebView 就看到会话列表，
+     * 而不是"新建会话"引导页。轮询 30 秒，失败静默（用户可手动点）。
+     */
+    private void openSessionDrawer() {
+        if (webView == null) return;
+        webView.evaluateJavascript(
+                "(function(){var n=0,t=setInterval(function(){" +
+                "var b=document.querySelector('[data-testid=\"mobile-sidebar-toggle\"]');" +
+                "if(b){clearInterval(t);b.click();return;}" +
+                "if(++n>150)clearInterval(t);},200);})();", null);
+    }
+
+    /**
      * 尽力自动定位会话：页面加载后注入 JS，
      * 自动点开"选择项目"（如需要）并按标题文本匹配点击目标会话。
      * cc-haha H5 不支持 URL 定位会话，此为页面自动化兜底；失败则用户手动点。
@@ -265,6 +279,7 @@ public class MainActivity extends Activity {
                 urlInput.setText(url);
                 refreshButtons();
                 injectNarrowScreenFix();
+                openSessionDrawer();
                 autoOpenSession();
             }
 

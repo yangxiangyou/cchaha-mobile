@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,9 @@ import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -44,6 +48,7 @@ public class SessionListActivity extends Activity {
     private TextView statusText;
     private SessionAdapter adapter;
     private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe;
+    private WebView prewarmWebView; // 预热 WebView（防 GC）
     private String baseUrl = "";
     private String token = "";
     private List<SessionApi.SessionInfo> allSessions = new ArrayList<>(); // 全量（供搜索过滤）
@@ -117,6 +122,10 @@ public class SessionListActivity extends Activity {
         // 自动更新检查（后台，失败静默）
         AppUpdateChecker.check(this);
 
+        // WebView 预热：H5 首页经 frp 隧道很慢（实测 20s+），提前加载写磁盘缓存，
+        // 之后进完整版/新建会话时同 URL 命中缓存，黑屏时间大幅缩短
+        mainHandler.postDelayed(this::prewarmH5, 1000);
+
         listView.setOnItemClickListener((parent, view, position, id) -> {
             SessionApi.SessionInfo s = adapter.getItem(position);
             if (s == null) return;
@@ -127,6 +136,39 @@ public class SessionListActivity extends Activity {
             i.putExtra(SessionMessagesActivity.EXTRA_SESSION_TITLE, s.title);
             startActivity(i);
         });
+    }
+
+    /** 后台预热 H5（不 attach 到界面）：加载完整页面写入磁盘缓存，进 WebView 时提速 */
+    private void prewarmH5() {
+        if (prewarmWebView != null || baseUrl.isEmpty() || token.isEmpty()) return;
+        try {
+            WebView wv = new WebView(this);
+            prewarmWebView = wv;
+            WebSettings s = wv.getSettings();
+            s.setJavaScriptEnabled(true);
+            s.setDomStorageEnabled(true);
+            s.setCacheMode(WebSettings.LOAD_DEFAULT);
+            wv.setWebViewClient(new WebViewClient() {
+                @Override
+                public void onPageFinished(WebView view, String url) {
+                    // 预热完成即释放（磁盘缓存已写入，下次同 URL 加载命中缓存）
+                    try { view.destroy(); } catch (Exception ignored) { }
+                    if (prewarmWebView == view) prewarmWebView = null;
+                }
+
+                @Override
+                public boolean onRenderProcessGone(WebView view,
+                                                   android.webkit.RenderProcessGoneDetail detail) {
+                    // 预热失败静默，不影响主进程
+                    if (prewarmWebView == view) prewarmWebView = null;
+                    return true;
+                }
+            });
+            wv.loadUrl(baseUrl + "/?token=" + token);
+        } catch (Exception e) {
+            Log.w("SessionList", "prewarm failed", e);
+            prewarmWebView = null;
+        }
     }
 
     /** 从完整 H5 URL 提取 token（?token=xxx） */
@@ -198,6 +240,10 @@ public class SessionListActivity extends Activity {
     @Override
     protected void onDestroy() {
         executor.shutdown();
+        if (prewarmWebView != null) {
+            try { prewarmWebView.destroy(); } catch (Exception ignored) { }
+            prewarmWebView = null;
+        }
         super.onDestroy();
     }
 

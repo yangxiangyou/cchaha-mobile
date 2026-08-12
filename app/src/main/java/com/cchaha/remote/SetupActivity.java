@@ -34,6 +34,7 @@ public class SetupActivity extends Activity {
     private Storage storage;
     private ListView hostList;
     private EditText urlInput;
+    private EditText tokenInput;
     private HostAdapter adapter;
 
     @Override
@@ -48,6 +49,7 @@ public class SetupActivity extends Activity {
         storage = new Storage(this);
         hostList = findViewById(R.id.host_list);
         urlInput = findViewById(R.id.setup_url);
+        tokenInput = findViewById(R.id.setup_token);
         Button add = findViewById(R.id.setup_add);
         Button scan = findViewById(R.id.setup_scan);
         TextView hint = findViewById(R.id.setup_hint);
@@ -107,10 +109,24 @@ public class SetupActivity extends Activity {
                 Toast.makeText(this, R.string.invalid_url, Toast.LENGTH_SHORT).show();
                 return;
             }
+            // 地址一行 + token 一行：地址未含 token 时用 token 框拼接
+            // （兼容粘贴完整链接：已含 ?token= 则原样使用）
+            if (!normalized.contains("?token=")) {
+                String token = tokenInput.getText().toString().trim();
+                if (token.isEmpty()) {
+                    Toast.makeText(this, R.string.token_required, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                int q = normalized.indexOf('?');
+                String base = q > 0 ? normalized.substring(0, q) : normalized;
+                while (base.endsWith("/")) base = base.substring(0, base.length() - 1);
+                normalized = base + "/?token=" + token;
+            }
             Storage.SavedHost host = storage.upsertHost(normalized);
             if (host != null) {
                 storage.setCurrentHost(host.id);
                 urlInput.setText("");
+                tokenInput.setText("");
                 adapter.refresh(storage.getHosts());
                 startMain();
             }
