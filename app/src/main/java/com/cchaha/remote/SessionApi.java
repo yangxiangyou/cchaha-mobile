@@ -192,13 +192,13 @@ public final class SessionApi {
         return list;
     }
 
-    /** 创建会话（workDir 可空，留空用服务端默认目录）；返回 sessionId，失败抛异常 */
+    /** 创建会话（workDir 可空，留空用服务端默认目录）；返回 sessionId，失败抛异常（含服务端错误信息） */
     public static String createSession(String baseUrl, String token, String workDir) throws Exception {
         String urlStr = baseUrl + "/api/sessions";
         HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
         try {
-            conn.setConnectTimeout(TIMEOUT_MS);
-            conn.setReadTimeout(TIMEOUT_MS);
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(60000); // 创建可能较慢（初始化工作区）
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Referer", baseUrl + "/?token=" + token);
             conn.setRequestProperty("Authorization", "Bearer " + token);
@@ -209,7 +209,9 @@ public final class SessionApi {
                     : "{\"workDir\":\"" + escapeJson(workDir.trim()) + "\"}";
             conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
             int code = conn.getResponseCode();
-            if (code != 200 && code != 201) throw new Exception("API 返回 " + code);
+            if (code != 200 && code != 201) {
+                throw new Exception("API 返回 " + code + "：" + readErrorBody(conn));
+            }
             StringBuilder sb = new StringBuilder();
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
@@ -222,6 +224,29 @@ public final class SessionApi {
             return sid;
         } finally {
             conn.disconnect();
+        }
+    }
+
+    /** 读取错误响应体（含服务端 message），便于定位失败原因 */
+    private static String readErrorBody(HttpURLConnection conn) {
+        try {
+            java.io.InputStream es = conn.getErrorStream();
+            if (es == null) return "";
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(es, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+            }
+            String raw = sb.toString();
+            try {
+                JSONObject o = new JSONObject(raw);
+                String msg = o.optString("message", "");
+                return msg.isEmpty() ? raw : msg;
+            } catch (Exception ignored) { }
+            return raw.length() > 200 ? raw.substring(0, 200) : raw;
+        } catch (Exception e) {
+            return "";
         }
     }
 

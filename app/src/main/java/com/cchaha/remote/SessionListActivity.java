@@ -213,8 +213,11 @@ public class SessionListActivity extends Activity {
                         } catch (Exception e) {
                             mainHandler.post(() -> {
                                 if (isFinishing() || isDestroyed()) return;
+                                String detail = e.getMessage();
+                                if (detail == null || detail.isEmpty()) detail = getString(R.string.create_session_failed);
+                                if (detail.length() > 120) detail = detail.substring(0, 120);
                                 statusText.setText(R.string.create_session_failed);
-                                Toast.makeText(this, R.string.create_session_failed, Toast.LENGTH_SHORT).show();
+                                Toast.makeText(this, detail, Toast.LENGTH_LONG).show();
                             });
                         }
                     });
