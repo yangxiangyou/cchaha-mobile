@@ -159,33 +159,53 @@ public final class SessionApi {
             id = o.optString("id");
             type = o.optString("type", "unknown");
             timestampMs = parseTime(o.optString("timestamp"));
-            StringBuilder sb = new StringBuilder();
             JSONArray content = o.optJSONArray("content");
             if (content != null) {
                 for (int i = 0; i < content.length(); i++) {
                     JSONObject c = content.optJSONObject(i);
                     if (c == null) continue;
                     String ct = c.optString("type");
-                    String txt = c.optString("text");
-                    if (txt == null || txt.isEmpty()) txt = c.optString("thinking");
+                    String txt = blockText(c);
                     if (txt != null && !txt.isEmpty()) {
                         String toolName = "tool_use".equals(ct) ? c.optString("name") : "";
                         blocks.add(new Block(ct, txt, toolName));
-                        if ("thinking".equals(ct)) sb.append("[思考] ");
-                        else if ("tool_use".equals(ct)) sb.append("[工具] ");
-                        else if ("tool_result".equals(ct)) sb.append("[结果] ");
-                        sb.append(txt).append("\n");
                     } else if ("image".equals(ct) || "image_url".equals(ct)) {
                         blocks.add(new Block(ct, "", ""));
-                        sb.append("[图片]\n");
                     } else if ("file".equals(ct) || "attachment".equals(ct)) {
                         blocks.add(new Block(ct, "", ""));
-                        sb.append("[文件]\n");
                     }
                 }
             }
-            text = sb.toString().trim();
-            if (text.isEmpty()) text = "(无文本内容)";
+            // 兼容旧缓存：仅当无内容块（旧格式消息）时才拼显示文本，省内存
+            if (blocks.isEmpty()) {
+                text = o.optString("text", "");
+                if (text.isEmpty()) text = "(无文本内容)";
+            }
+        }
+
+        /** 提取块文本：text/thinking 直接读；tool_result 的 content 是嵌套数组，递归拼接 */
+        private static String blockText(JSONObject c) {
+            String ct = c.optString("type");
+            String txt = c.optString("text");
+            if (txt == null || txt.isEmpty()) txt = c.optString("thinking");
+            if (txt != null && !txt.isEmpty()) return txt;
+            if ("tool_result".equals(ct) || "redacted_thinking".equals(ct)) {
+                JSONArray nested = c.optJSONArray("content");
+                if (nested != null) {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < nested.length(); i++) {
+                        JSONObject nc = nested.optJSONObject(i);
+                        if (nc == null) continue;
+                        String nt = nc.optString("text");
+                        if (nt != null && !nt.isEmpty()) {
+                            sb.append(nt);
+                            if (i < nested.length() - 1) sb.append('\n');
+                        }
+                    }
+                    if (sb.length() > 0) return sb.toString();
+                }
+            }
+            return "";
         }
     }
 

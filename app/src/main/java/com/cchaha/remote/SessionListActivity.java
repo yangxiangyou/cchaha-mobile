@@ -49,6 +49,7 @@ public class SessionListActivity extends Activity {
     private SessionAdapter adapter;
     private androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipe;
     private WebView prewarmWebView; // 预热 WebView（防 GC）
+    private Runnable prewarmRunnable; // 预热延迟句柄（onStop 取消用）
     private String baseUrl = "";
     private String token = "";
     private List<SessionApi.SessionInfo> allSessions = new ArrayList<>(); // 全量（供搜索过滤）
@@ -129,7 +130,8 @@ public class SessionListActivity extends Activity {
 
         // WebView 预热：H5 首页经 frp 隧道很慢（实测 20s+），提前加载写磁盘缓存，
         // 之后进完整版/新建会话时同 URL 命中缓存，黑屏时间大幅缩短
-        mainHandler.postDelayed(this::prewarmH5, 1000);
+        prewarmRunnable = this::prewarmH5;
+        mainHandler.postDelayed(prewarmRunnable, 1000);
 
         listView.setOnItemClickListener((parent, view, position, id) -> {
             SessionApi.SessionInfo s = adapter.getItem(position);
@@ -191,6 +193,8 @@ public class SessionListActivity extends Activity {
     @Override
     protected void onStop() {
         super.onStop();
+        // 取消尚未执行的预热延迟，并销毁已创建的预热 WebView
+        if (prewarmRunnable != null) mainHandler.removeCallbacks(prewarmRunnable);
         if (prewarmWebView != null) {
             try { prewarmWebView.destroy(); } catch (Exception ignored) { }
             prewarmWebView = null;

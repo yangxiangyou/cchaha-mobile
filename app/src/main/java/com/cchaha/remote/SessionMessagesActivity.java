@@ -224,7 +224,18 @@ public class SessionMessagesActivity extends Activity {
                         if (lastMessageCount > 0 && messages.size() > lastMessageCount && !visible) {
                             notifyNewReply(messages.size() - lastMessageCount);
                         }
+                        // 无变化（条数相同且最后一条一致）：不重排列表，省滚动开销
+                        boolean unchanged = lastMessageCount > 0
+                                && messages.size() == lastMessageCount
+                                && !messages.isEmpty()
+                                && adapter.lastMessageId() != null
+                                && adapter.lastMessageId().equals(messages.get(messages.size() - 1).id);
                         lastMessageCount = messages.size();
+                        if (unchanged) {
+                            swipe.setRefreshing(false);
+                            loading = false;
+                            return;
+                        }
                         adapter.refresh(messages);
                         statusText.setText(getString(R.string.msg_updated, messages.size()));
                         // 仅在用户已接近底部时跟随滚动（浏览历史时不打扰）；未布局视为底部
@@ -341,10 +352,19 @@ public class SessionMessagesActivity extends Activity {
     private class MessageAdapter extends BaseAdapter {
         private List<SessionApi.Message> items = new ArrayList<>();
         private final java.util.Set<String> expandedIds = new java.util.HashSet<>();
+        // 渲染结果按（消息 id + 展开状态）缓存：滚动不重复构建 Spannable
+        private final java.util.Map<String, CharSequence> renderCache = new java.util.HashMap<>();
+        private String lastMsgId;
 
         void refresh(List<SessionApi.Message> newItems) {
             items = new ArrayList<>(newItems);
+            renderCache.clear();
+            lastMsgId = items.isEmpty() ? null : items.get(items.size() - 1).id;
             notifyDataSetChanged();
+        }
+
+        String lastMessageId() {
+            return lastMsgId;
         }
 
         @Override
@@ -362,23 +382,39 @@ public class SessionMessagesActivity extends Activity {
             return position;
         }
 
+        private static class ViewHolder {
+            TextView bubble;
+            TextView meta;
+        }
+
         @SuppressLint("InflateParams")
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            View v = convertView;
-            if (v == null) {
-                v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_message, parent, false);
+            ViewHolder h;
+            if (convertView == null) {
+                convertView = LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.item_message, parent, false);
+                h = new ViewHolder();
+                h.bubble = convertView.findViewById(R.id.msg_bubble);
+                h.meta = convertView.findViewById(R.id.msg_meta);
+                convertView.setTag(h);
+            } else {
+                h = (ViewHolder) convertView.getTag();
             }
             SessionApi.Message m = getItem(position);
-            TextView bubble = v.findViewById(R.id.msg_bubble);
-            TextView meta = v.findViewById(R.id.msg_meta);
-
             boolean isUser = "user".equals(m.type);
-            bubble.setBackgroundResource(isUser ? R.drawable.bubble_user : R.drawable.bubble_assistant);
-            bubble.setText(buildStyledText(m));
+            h.bubble.setBackgroundResource(isUser ? R.drawable.bubble_user : R.drawable.bubble_assistant);
+            String key = m.id + "|" + (expandedIds.contains(m.id) ? "1" : "0");
+            CharSequence rendered = renderCache.get(key);
+            if (rendered == null) {
+                rendered = buildStyledText(m);
+                renderCache.put(key, rendered);
+            }
+            h.bubble.setText(rendered);
             // 点击折叠/展开（思考、工具结果等长内容）
             final SessionApi.Message fm = m;
-            bubble.setOnClickListener(v2 -> {
+            final ViewHolder fh = h;
+            h.bubble.setOnClickListener(v2 -> {
                 boolean hasFoldable = false;
                 for (SessionApi.Block b : fm.blocks) {
                     if ("thinking".equals(b.type) || "tool_result".equals(b.type)) {
@@ -388,7 +424,8 @@ public class SessionMessagesActivity extends Activity {
                 }
                 if (!hasFoldable) return;
                 if (!expandedIds.add(fm.id)) expandedIds.remove(fm.id);
-                bubble.setText(buildStyledText(fm));
+                renderCache.clear(); // 展开状态变化：缓存失效
+                fh.bubble.setText(buildStyledText(fm));
             });
 
             String time = m.timestampMs > 0 ? fmtTime(m.timestampMs) : "";
@@ -399,8 +436,8 @@ public class SessionMessagesActivity extends Activity {
                 if ("tool_use".equals(b.type)) { tag = "工具"; break; }
             }
             String who = isUser ? "我" : "Claude";
-            meta.setText(who + (tag.isEmpty() ? "" : " · " + tag) + " · " + time);
-            return v;
+            h.meta.setText(who + (tag.isEmpty() ? "" : " · " + tag) + " · " + time);
+            return convertView;
         }
 
         /** 时间显示：当天 HH:mm，跨天带日期 MM-dd HH:mm */
@@ -425,7 +462,12 @@ public class SessionMessagesActivity extends Activity {
                 if (i > 0) sp.append("\n");
                 String type = b.type;
                 if ("text".equals(type)) {
-                    sp.append(styledCodeBlock(b.text));
+                    // 超长纯文本折叠（代码块保持原样，折叠会破坏标记配对）
+                    String t = b.text;
+                    if (t != null && t.length() > 800 && !t.contains("```")) {
+                        t = fold(t, expanded, 800);
+                    }
+                    sp.append(styledCodeBlock(t));
                 } else if ("thinking".equals(type)) {
                     String txt = fold(b.text, expanded, 120);
                     int start = sp.length();

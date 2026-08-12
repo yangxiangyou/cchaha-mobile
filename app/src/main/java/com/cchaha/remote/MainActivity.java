@@ -305,11 +305,12 @@ public class MainActivity extends Activity {
                 progress.setVisibility(View.GONE);
                 if (loadingMask != null) loadingMask.setVisibility(View.GONE);
                 boolean isHttp = url != null && (url.startsWith("http://") || url.startsWith("https://"));
-                // 仅真实页面（含与当前加载一致的 URL）才算连接成功；
+                // 真实 http(s) 页面加载完成即视为连接成功（302 重定向后 URL 会变化，以最终 URL 为准）；
                 // 错误页（data: URL）不重置错误态，避免"假绿灯"掩盖失败
-                if (isHttp && url.equals(currentUrl)) {
+                if (isHttp && !errorState) {
                     errorState = false;
                     mainFrameFailCount = 0;
+                    currentUrl = url; // 重定向后同步最终地址
                     setConnState(ConnState.CONNECTED);
                     urlInput.setText(displayUrl(url));
                 } else if (errorState) {
