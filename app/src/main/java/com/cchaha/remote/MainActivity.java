@@ -56,6 +56,7 @@ public class MainActivity extends Activity {
     enum ConnState { CONNECTING, CONNECTED, ERROR, DISCONNECTED }
 
     private FrameLayout webContainer;
+    private View loadingMask;
     private WebView webView;
     private EditText urlInput;
     private View statusDot;
@@ -110,6 +111,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         webContainer = findViewById(R.id.web_container);
+        loadingMask = findViewById(R.id.loading_mask);
         urlInput = findViewById(R.id.url_input);
         statusDot = findViewById(R.id.status_dot);
         progress = findViewById(R.id.progress);
@@ -267,12 +269,14 @@ public class MainActivity extends Activity {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 progress.setVisibility(View.VISIBLE);
+                if (loadingMask != null) loadingMask.setVisibility(View.VISIBLE);
                 setConnState(ConnState.CONNECTING);
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
                 progress.setVisibility(View.GONE);
+                if (loadingMask != null) loadingMask.setVisibility(View.GONE);
                 errorState = false;
                 mainFrameFailCount = 0;
                 setConnState(ConnState.CONNECTED);
@@ -288,6 +292,7 @@ public class MainActivity extends Activity {
                                         WebResourceError error) {
                 if (request == null || !request.isForMainFrame()) return;
                 progress.setVisibility(View.GONE);
+                if (loadingMask != null) loadingMask.setVisibility(View.GONE);
                 mainFrameFailCount++;
 
                 // 自动重连一次：可能是临时闪断
@@ -323,6 +328,7 @@ public class MainActivity extends Activity {
                             webView.destroy();
                             webView = null;
                         }
+                        if (loadingMask != null) loadingMask.setVisibility(View.VISIBLE);
                         createWebView();
                         if (!currentUrl.isEmpty()) webView.loadUrl(currentUrl);
                         Toast.makeText(MainActivity.this, R.string.webview_recovered, Toast.LENGTH_SHORT).show();

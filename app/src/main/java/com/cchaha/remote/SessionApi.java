@@ -92,12 +92,26 @@ public final class SessionApi {
         }
     }
 
-    /** 一条消息（简化模型：id/type/显示文本/时间） */
+    /** 一条消息内容块（渲染增强用：按块类型展示不同样式） */
+    public static class Block {
+        public String type;     // text / thinking / tool_use / tool_result / image / image_url / file / attachment
+        public String text;     // 块文本（thinking/tool_use 等）
+        public String toolName; // tool_use 的工具名（如 Bash、Read）
+
+        Block(String type, String text, String toolName) {
+            this.type = type == null ? "" : type;
+            this.text = text;
+            this.toolName = toolName;
+        }
+    }
+
+    /** 一条消息（渲染模型：id/type/时间 + 内容块 + 兼容文本） */
     public static class Message {
         public String id;
         public String type;       // user / assistant / thinking / tool_use / tool_result ...
-        public String text;       // 提取后的显示文本
+        public String text;       // 提取后的显示文本（兼容旧缓存）
         public long timestampMs;
+        public java.util.List<Block> blocks = new ArrayList<>();
 
         Message(JSONObject o) {
             id = o.optString("id");
@@ -113,13 +127,17 @@ public final class SessionApi {
                     String txt = c.optString("text");
                     if (txt == null || txt.isEmpty()) txt = c.optString("thinking");
                     if (txt != null && !txt.isEmpty()) {
+                        String toolName = "tool_use".equals(ct) ? c.optString("name") : "";
+                        blocks.add(new Block(ct, txt, toolName));
                         if ("thinking".equals(ct)) sb.append("[思考] ");
                         else if ("tool_use".equals(ct)) sb.append("[工具] ");
                         else if ("tool_result".equals(ct)) sb.append("[结果] ");
                         sb.append(txt).append("\n");
                     } else if ("image".equals(ct) || "image_url".equals(ct)) {
+                        blocks.add(new Block(ct, "", ""));
                         sb.append("[图片]\n");
                     } else if ("file".equals(ct) || "attachment".equals(ct)) {
+                        blocks.add(new Block(ct, "", ""));
                         sb.append("[文件]\n");
                     }
                 }

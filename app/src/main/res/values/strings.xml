@@ -47,4 +47,5 @@
     <string name="msg_cache_loading">显示缓存内容，后台刷新中…</string>
     <string name="msg_refresh_failed_keep">刷新失败，保留缓存内容</string>
     <string name="msg_full_version">完整版</string>
+    <string name="msg_conn_loading">正在连接电脑…</string>
 </resources>

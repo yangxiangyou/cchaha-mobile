@@ -54,6 +54,21 @@ public class SessionMessagesActivity extends Activity {
     private boolean visible = true;   // Activity 是否在前台
     private int lastMessageCount = 0; // 上次消息数（用于新回复检测）
 
+    // 轮询：前台 30 秒自动出新消息；后台（锁屏/切走）60 秒检查一次，有新回复时推送通知
+    private static final long POLL_INTERVAL_MS = 30_000;
+    private static final long POLL_INTERVAL_BG_MS = 60_000;
+    private final Runnable pollRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (loading) {
+                mainHandler.postDelayed(this, POLL_INTERVAL_MS);
+                return;
+            }
+            loadMessages();
+            mainHandler.postDelayed(this, visible ? POLL_INTERVAL_MS : POLL_INTERVAL_BG_MS);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -206,24 +221,34 @@ public class SessionMessagesActivity extends Activity {
         });
     }
 
-    /** 新回复通知（界面不在前台时） */
+    /** 新回复通知（界面不在前台时）：固定 key 按会话复用更新，点击回到会话 */
     private void notifyNewReply(int count) {
         try {
             android.app.NotificationManager nm =
                     (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             if (nm == null) return;
+            Intent intent = new Intent(this, SessionMessagesActivity.class);
+            intent.putExtra(EXTRA_SESSION_ID, sessionId);
+            intent.putExtra(EXTRA_SESSION_TITLE, sessionTitle);
+            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            android.app.PendingIntent pi = android.app.PendingIntent.getActivity(
+                    this, 0, intent,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT
+                            | android.app.PendingIntent.FLAG_IMMUTABLE);
             android.app.Notification.Builder b = new android.app.Notification.Builder(this)
                     .setSmallIcon(android.R.drawable.ic_dialog_email)
                     .setContentTitle(sessionTitle != null ? sessionTitle : "会话")
                     .setContentText("收到 " + count + " 条新消息")
-                    .setAutoCancel(true);
+                    .setAutoCancel(true)
+                    .setContentIntent(pi);
             if (android.os.Build.VERSION.SDK_INT >= 26) {
                 android.app.NotificationChannel ch = new android.app.NotificationChannel(
                         "replies", "会话回复", android.app.NotificationManager.IMPORTANCE_DEFAULT);
                 nm.createNotificationChannel(ch);
                 b.setChannelId("replies");
             }
-            nm.notify((int) (System.currentTimeMillis() % 100000), b.build());
+            // 固定通知 key（按会话）：多次发现新回复复用同一条，更新计数不刷屏
+            nm.notify("reply_" + sessionId, 0, b.build());
         } catch (Exception ignored) { }
     }
 
@@ -231,23 +256,29 @@ public class SessionMessagesActivity extends Activity {
     protected void onStart() {
         super.onStart();
         visible = true;
+        // 前台恢复轮询（立即来一次，再按间隔）
+        mainHandler.removeCallbacks(pollRunnable);
+        mainHandler.post(pollRunnable);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         visible = false;
+        // 后台不停止轮询（放慢到 60 秒），锁屏/切走时靠它发现新回复并推送通知
     }
 
     @Override
     protected void onDestroy() {
+        mainHandler.removeCallbacks(pollRunnable);
         executor.shutdown();
         super.onDestroy();
     }
 
-    /** 消息适配器：user 右对齐，其他左对齐 */
+    /** 消息适配器：user 右对齐，其他左对齐；块级渲染（思考折叠/工具卡片/结果折叠） */
     private class MessageAdapter extends BaseAdapter {
         private List<SessionApi.Message> items = new ArrayList<>();
+        private final java.util.Set<String> expandedIds = new java.util.HashSet<>();
 
         void refresh(List<SessionApi.Message> newItems) {
             items = new ArrayList<>(newItems);
@@ -282,7 +313,21 @@ public class SessionMessagesActivity extends Activity {
 
             boolean isUser = "user".equals(m.type);
             bubble.setBackgroundResource(isUser ? R.drawable.bubble_user : R.drawable.bubble_assistant);
-            bubble.setText(buildStyledText(m.text));
+            bubble.setText(buildStyledText(m));
+            // 点击折叠/展开（思考、工具结果等长内容）
+            final SessionApi.Message fm = m;
+            bubble.setOnClickListener(v2 -> {
+                boolean hasFoldable = false;
+                for (SessionApi.Block b : fm.blocks) {
+                    if ("thinking".equals(b.type) || "tool_result".equals(b.type)) {
+                        hasFoldable = true;
+                        break;
+                    }
+                }
+                if (!hasFoldable) return;
+                if (!expandedIds.add(fm.id)) expandedIds.remove(fm.id);
+                bubble.setText(buildStyledText(fm));
+            });
 
             String time = m.timestampMs > 0
                     ? new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(m.timestampMs)) : "";
@@ -290,9 +335,70 @@ public class SessionMessagesActivity extends Activity {
             return v;
         }
 
+        /** 块级渲染：思考灰字折叠、工具等宽卡片、结果折叠、图片占位 */
+        private CharSequence buildStyledText(SessionApi.Message m) {
+            boolean expanded = expandedIds.contains(m.id);
+            if (m.blocks.isEmpty()) return styledCodeBlock(m.text); // 旧缓存兼容
+            android.text.SpannableStringBuilder sp = new android.text.SpannableStringBuilder();
+            for (int i = 0; i < m.blocks.size(); i++) {
+                SessionApi.Block b = m.blocks.get(i);
+                if (i > 0) sp.append("\n");
+                String type = b.type;
+                if ("text".equals(type)) {
+                    sp.append(styledCodeBlock(b.text));
+                } else if ("thinking".equals(type)) {
+                    String txt = fold(b.text, expanded, 120);
+                    int start = sp.length();
+                    sp.append("[思考] ").append(txt);
+                    sp.setSpan(new android.text.style.ForegroundColorSpan(0xFF8A94A0), start, sp.length(),
+                            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    sp.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.ITALIC), start, sp.length(),
+                            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                } else if ("tool_use".equals(type)) {
+                    String name = (b.toolName != null && !b.toolName.isEmpty()) ? b.toolName : "工具";
+                    String txt = fold(b.text, true, 200);
+                    int start = sp.length();
+                    sp.append("⚙ ").append(name).append("\n").append(txt);
+                    sp.setSpan(new android.text.style.ForegroundColorSpan(0xFF4DA3FF), start,
+                            start + 2 + name.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    sp.setSpan(new android.text.style.StyleSpan(android.graphics.Typeface.BOLD), start,
+                            start + 2 + name.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    sp.setSpan(new android.text.style.TypefaceSpan("monospace"), start, sp.length(),
+                            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                } else if ("tool_result".equals(type)) {
+                    String txt = fold(b.text, expanded, 120);
+                    int start = sp.length();
+                    sp.append("[结果] ").append(txt);
+                    sp.setSpan(new android.text.style.ForegroundColorSpan(0xFF8A94A0), start, sp.length(),
+                            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                } else if ("image".equals(type) || "image_url".equals(type)) {
+                    int start = sp.length();
+                    sp.append("🖼 [图片] 请在完整版中查看");
+                    sp.setSpan(new android.text.style.ForegroundColorSpan(0xFF8A94A0), start, sp.length(),
+                            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                } else if ("file".equals(type) || "attachment".equals(type)) {
+                    int start = sp.length();
+                    sp.append("📎 [文件] 请在完整版中查看");
+                    sp.setSpan(new android.text.style.ForegroundColorSpan(0xFF8A94A0), start, sp.length(),
+                            android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                } else if (b.text != null && !b.text.isEmpty()) {
+                    sp.append(styledCodeBlock(b.text));
+                }
+            }
+            return sp;
+        }
+
+        /** 长文本折叠：超过 maxLen 截断并提示点击展开 */
+        private String fold(String text, boolean expanded, int maxLen) {
+            if (text == null) return "";
+            if (expanded || text.length() <= maxLen) return text;
+            return text.substring(0, maxLen) + "…（点击展开）";
+        }
+
         /** 代码块（```...```）用等宽字体 + 深色背景 */
-        private CharSequence buildStyledText(String text) {
-            if (text == null || !text.contains("```")) return text;
+        private CharSequence styledCodeBlock(String text) {
+            if (text == null) return "";
+            if (!text.contains("```")) return text;
             android.text.SpannableString sp = new android.text.SpannableString(text);
             int start = 0;
             while (true) {
