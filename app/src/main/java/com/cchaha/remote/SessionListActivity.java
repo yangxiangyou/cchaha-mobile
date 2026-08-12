@@ -71,8 +71,6 @@ public class SessionListActivity extends Activity {
         cache = new SessionCache(this);
         listView = findViewById(R.id.session_list);
         statusText = findViewById(R.id.session_status);
-        Button refresh = findViewById(R.id.session_refresh);
-        Button full = findViewById(R.id.session_full);
         Button device = findViewById(R.id.session_device);
         TextView title = findViewById(R.id.session_title);
         EditText searchBox = findViewById(R.id.session_search);
@@ -94,9 +92,6 @@ public class SessionListActivity extends Activity {
         // 2. 后台刷新（进入时走 TTL：缓存新鲜则跳过）
         enterRefresh();
 
-        refresh.setOnClickListener(v -> forceRefresh());
-        // 完整版入口：直接打开 WebView 主界面（H5 完整功能）
-        full.setOnClickListener(v -> startActivity(new Intent(this, MainActivity.class)));
         // 设备管理入口：回首页（添加/编辑/切换设备）；manual 防止自动跳回本页
         device.setOnClickListener(v -> {
             Intent i = new Intent(this, SetupActivity.class);
