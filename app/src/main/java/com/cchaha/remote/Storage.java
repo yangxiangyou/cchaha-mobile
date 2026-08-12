@@ -181,8 +181,4 @@ public final class Storage {
         persist();
     }
 
-    public void clearCurrent() {
-        currentId = "";
-        prefs.edit().remove(KEY_CURRENT).apply();
-    }
 }

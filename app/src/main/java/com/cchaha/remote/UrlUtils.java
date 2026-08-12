@@ -66,6 +66,29 @@ public final class UrlUtils {
         return true;
     }
 
+    /** 从完整 H5 URL 提取 token（?token=xxx）；URL 内为编码形式，取出后解码还原原始 token */
+    public static String extractToken(String url) {
+        if (url == null) return "";
+        int i = url.indexOf("token=");
+        if (i < 0) return "";
+        String rest = url.substring(i + 6);
+        int j = rest.indexOf('&');
+        String raw = j > 0 ? rest.substring(0, j) : rest;
+        try {
+            return java.net.URLDecoder.decode(raw, "UTF-8");
+        } catch (Exception e) {
+            return raw;
+        }
+    }
+
+    /** 去掉 URL 尾斜杠（统一 baseUrl 形态，避免双斜杠请求与缓存键不一致） */
+    public static String trimTrailingSlash(String url) {
+        if (url == null) return "";
+        String s = url;
+        while (s.endsWith("/")) s = s.substring(0, s.length() - 1);
+        return s;
+    }
+
     /** 从链接提取展示名：IP 保留原样，域名取第一段，可读化 */
     public static String extractLabel(String url) {
         if (!isUsable(url)) return "未命名";

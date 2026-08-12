@@ -224,34 +224,12 @@ public class SessionListActivity extends Activity {
         if (storage == null) return;
         Storage.SavedHost host = storage.getCurrentHost();
         if (host != null) {
-            baseUrl = trimTrailingSlash(host.url.contains("?")
+            baseUrl = UrlUtils.trimTrailingSlash(host.url.contains("?")
                     ? host.url.substring(0, host.url.indexOf('?')) : host.url);
-            token = extractToken(host.url);
+            token = UrlUtils.extractToken(host.url);
             if (title != null) title.setText(host.name);
         } else if (title != null) {
             title.setText(getString(R.string.app_name));
-        }
-    }
-
-    /** 去掉 URL 尾斜杠（统一 baseUrl 形态，避免 //api 双斜杠与缓存键不一致） */
-    private static String trimTrailingSlash(String url) {
-        if (url == null) return "";
-        String s = url;
-        while (s.endsWith("/")) s = s.substring(0, s.length() - 1);
-        return s;
-    }
-
-    /** 从完整 H5 URL 提取 token（?token=xxx）；URL 内为编码形式，取出后解码还原原始 token */
-    private String extractToken(String url) {
-        int i = url.indexOf("token=");
-        if (i < 0) return "";
-        String rest = url.substring(i + 6);
-        int j = rest.indexOf('&');
-        String raw = j > 0 ? rest.substring(0, j) : rest;
-        try {
-            return java.net.URLDecoder.decode(raw, "UTF-8");
-        } catch (Exception e) {
-            return raw;
         }
     }
 

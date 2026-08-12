@@ -169,6 +169,9 @@ public final class SessionApi {
                     if (txt != null && !txt.isEmpty()) {
                         String toolName = "tool_use".equals(ct) ? c.optString("name") : "";
                         blocks.add(new Block(ct, txt, toolName));
+                    } else if ("tool_use".equals(ct)) {
+                        // 无文本的 tool_use 也保留块（渲染工具名卡片）
+                        blocks.add(new Block(ct, "", c.optString("name", "")));
                     } else if ("image".equals(ct) || "image_url".equals(ct)) {
                         blocks.add(new Block(ct, "", ""));
                     } else if ("file".equals(ct) || "attachment".equals(ct)) {
@@ -207,11 +210,6 @@ public final class SessionApi {
             }
             return "";
         }
-    }
-
-    /** 拉取会话全部消息（cc-haha API 忽略 limit，总是返回全量；大会话约 6 秒） */
-    public static List<Message> fetchMessages(String baseUrl, String token, String sessionId) throws Exception {
-        return parseMessages(fetchMessagesJson(baseUrl, token, sessionId));
     }
 
     /** 拉取消息并返回原始 JSON 字符串（供本地缓存直接存储，避免二次序列化） */
@@ -373,25 +371,4 @@ public final class SessionApi {
         return sb.toString();
     }
 
-    /** 快速健康检查（sidecar 是否活着） */
-    public static boolean ping(String baseUrl, String token) {
-        try {
-            String urlStr = baseUrl + "/api/status";
-            HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
-            try {
-                applyTrust(conn);
-                conn.setConnectTimeout(8000);
-                conn.setReadTimeout(8000);
-                conn.setRequestMethod("GET");
-                conn.setRequestProperty("Referer", baseUrl + "/?token=" + encodeToken(token));
-                conn.setRequestProperty("Authorization", "Bearer " + token);
-                return conn.getResponseCode() == 200;
-            } finally {
-                conn.disconnect();
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "ping failed", e);
-            return false;
-        }
-    }
 }

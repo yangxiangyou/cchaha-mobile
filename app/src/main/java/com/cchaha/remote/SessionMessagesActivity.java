@@ -109,19 +109,9 @@ public class SessionMessagesActivity extends Activity {
         Storage.SavedHost host = new Storage(this).getCurrentHost();
         if (host != null) {
             String url = host.url;
-            baseUrl = url.contains("?") ? url.substring(0, url.indexOf('?')) : url;
-            while (baseUrl.endsWith("/")) baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
-            int i = url.indexOf("token=");
-            if (i >= 0) {
-                String rest = url.substring(i + 6);
-                int j = rest.indexOf('&');
-                String raw = j > 0 ? rest.substring(0, j) : rest;
-                try {
-                    token = java.net.URLDecoder.decode(raw, "UTF-8");
-                } catch (Exception e) {
-                    token = raw;
-                }
-            }
+            baseUrl = UrlUtils.trimTrailingSlash(url.contains("?")
+                    ? url.substring(0, url.indexOf('?')) : url);
+            token = UrlUtils.extractToken(url);
         }
 
         adapter = new MessageAdapter();

@@ -176,17 +176,9 @@ public class SetupActivity extends Activity {
     /** 编辑设备：名称 / 地址 / token 三字段（地址或 token 填错时修正，无需删除重加） */
     private void showEditDialog(Storage.SavedHost host) {
         // 解析现有 URL：base 与 token（URL 内为编码形式，回填时解码还原）
-        String base = host.url;
-        String token = "";
-        int q = host.url.indexOf('?');
-        if (q > 0) base = host.url.substring(0, q);
-        int i = host.url.indexOf("token=");
-        if (i >= 0) {
-            String rest = host.url.substring(i + 6);
-            int j = rest.indexOf('&');
-            String raw = j > 0 ? rest.substring(0, j) : rest;
-            try { token = java.net.URLDecoder.decode(raw, "UTF-8"); } catch (Exception ignored) { }
-        }
+        String base = UrlUtils.trimTrailingSlash(host.url.contains("?")
+                ? host.url.substring(0, host.url.indexOf('?')) : host.url);
+        String token = UrlUtils.extractToken(host.url);
 
         EditText nameInput = new EditText(this);
         nameInput.setSingleLine(true);
