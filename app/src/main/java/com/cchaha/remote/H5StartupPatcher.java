@@ -32,10 +32,16 @@ import javax.net.ssl.X509TrustManager;
 public final class H5StartupPatcher {
 
     private static final String TAG = "H5Patcher";
-    // 带换行锚定：替换后不再匹配原串，保证幂等
-    private static final String PATCH_TARGET = "function renderStartupError(reason) {\n";
+    /**
+     * 正则匹配看门狗渲染函数声明（宽松：兼容上游换行/缩进/参数名格式变化——
+     * 曾因上游把 "{ 换行" 改成别的格式而静默失效，导致错误页回归）。
+     */
+    private static final String PATCH_REGEX =
+            "function renderStartupError\\s*\\([^)]*\\)\\s*\\{";
+    /** 补丁成功标记（同时用于幂等判定与缓存有效性判定） */
+    private static final String PATCH_MARKER = "cchaha-mobile: suppress";
     private static final String PATCH_REPLACEMENT =
-            "function renderStartupError(reason) { return; // cchaha-mobile: suppress\n";
+            "function renderStartupError(reason) { return; // " + PATCH_MARKER + "\n";
     private static final int TIMEOUT_MS = 15000;
     /** 有界 LRU 缓存（按 origin+path 键，去 token；上限 8，防内存无限增长） */
     private static final Map<String, String> cache = new LinkedHashMap<String, String>(8, 0.75f, true) {
@@ -61,10 +67,10 @@ public final class H5StartupPatcher {
         }
     }
 
-    /** 替换 HTML 中的看门狗渲染函数（幂等） */
+    /** 替换 HTML 中的看门狗渲染函数（幂等；格式变化仍可匹配） */
     static String patch(String html) {
-        if (html == null || !html.contains(PATCH_TARGET)) return html;
-        return html.replace(PATCH_TARGET, PATCH_REPLACEMENT);
+        if (html == null || html.contains(PATCH_MARKER)) return html;
+        return html.replaceFirst(PATCH_REGEX, PATCH_REPLACEMENT);
     }
 
     /** 拉取主文档 HTML 并打补丁（应在后台线程调用）；失败返回 null */
@@ -96,7 +102,12 @@ public final class H5StartupPatcher {
                     while ((line = br.readLine()) != null) sb.append(line).append('\n');
                 }
                 String html = patch(sb.toString());
-                if (!html.contains("renderStartupError")) return null; // 非 H5 主文档，不缓存
+                // 补丁确认生效（含标记）才缓存：若上游结构变化导致 patch 失败，
+                // 不缓存未补丁的 HTML（否则 WebView 每次都拿到会触发错误页的版本）
+                if (!html.contains(PATCH_MARKER)) {
+                    Log.w(TAG, "patch not applied (upstream HTML changed?)");
+                    return null;
+                }
                 synchronized (cache) {
                     cache.put(key, html);
                 }

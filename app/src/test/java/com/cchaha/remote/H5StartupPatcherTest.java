@@ -60,6 +60,31 @@ public class H5StartupPatcherTest {
     }
 
     @Test
+    public void patchHandlesUpstreamFormatVariations() {
+        // 上游 bundle 格式变化（无换行/不同参数名/不同缩进）仍能匹配并短路
+        String singleLine = "function renderStartupError(reason){root.innerHTML='';}";
+        assertTrue(H5StartupPatcher.patch(singleLine)
+                .contains("function renderStartupError(reason) { return;"));
+
+        String noParams = "function renderStartupError() {\n  root.innerHTML = ''\n}";
+        assertTrue(H5StartupPatcher.patch(noParams)
+                .contains("function renderStartupError(reason) { return;"));
+
+        String spaced = "function renderStartupError ( reason )   {\n  root.innerHTML = ''\n}";
+        assertTrue(H5StartupPatcher.patch(spaced)
+                .contains("function renderStartupError(reason) { return;"));
+    }
+
+    @Test
+    public void patchWithoutWatchdogStaysUncached() {
+        // 不含看门狗函数：patch 原样返回且无标记（fetchPatched 会据此拒绝缓存）
+        String html = "<html><body>hello</body></html>";
+        String patched = H5StartupPatcher.patch(html);
+        assertEquals(html, patched);
+        assertFalse(patched.contains("suppress"));
+    }
+
+    @Test
     public void fetchPatchedReturnsNullWhenUnreachable() {
         // 拒绝连接端口 → 抛异常 → null
         assertNull(H5StartupPatcher.fetchPatched("http://127.0.0.1:1/index.html"));
