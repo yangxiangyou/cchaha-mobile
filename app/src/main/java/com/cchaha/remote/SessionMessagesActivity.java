@@ -181,10 +181,10 @@ public class SessionMessagesActivity extends Activity {
             final String msg = content;
             try {
                 sendExecutor.execute(() -> {
-                    boolean ok = SessionApi.sendMessage(baseUrl, token, sessionId, msg);
-                    mainHandler.post(() -> {
-                        if (isFinishing() || isDestroyed()) return;
-                        if (ok) {
+                    try {
+                        SessionApi.sendMessage(baseUrl, token, sessionId, msg);
+                        mainHandler.post(() -> {
+                            if (isFinishing() || isDestroyed()) return;
                             statusText.setText(R.string.msg_sent);
                             // 5 秒后自动刷新拿回复；若届时正在拉取则重排，保证不丢
                             mainHandler.postDelayed(() -> {
@@ -194,12 +194,21 @@ public class SessionMessagesActivity extends Activity {
                                 }
                                 loadMessages();
                             }, 5000);
-                        } else {
+                        });
+                    } catch (Exception sendErr) {
+                        mainHandler.post(() -> {
+                            if (isFinishing() || isDestroyed()) return;
+                            // 显示真实失败原因（token 失效/会话不存在/服务端拒绝），便于排查
+                            String detail = sendErr.getMessage();
+                            if (detail == null || detail.isEmpty()) {
+                                detail = getString(R.string.msg_send_failed);
+                            }
+                            if (detail.length() > 120) detail = detail.substring(0, 120);
                             statusText.setText(R.string.msg_send_failed);
-                            Toast.makeText(this, R.string.msg_send_failed, Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, detail, Toast.LENGTH_LONG).show();
                             inputBox.setText(msg);
-                        }
-                    });
+                        });
+                    }
                 });
             } catch (java.util.concurrent.RejectedExecutionException e) {
                 // 已销毁：静默
@@ -477,7 +486,11 @@ public class SessionMessagesActivity extends Activity {
         /** 块级渲染：思考灰字折叠、工具等宽卡片、结果折叠、图片占位 */
         private CharSequence buildStyledText(SessionApi.Message m) {
             boolean expanded = expandedIds.contains(m.id);
-            if (m.blocks.isEmpty()) return styledCodeBlock(m.text); // 旧缓存兼容
+            if (m.blocks.isEmpty()) { // 旧缓存兼容
+                String t = m.text;
+                if (t == null || t.isEmpty()) t = getString(R.string.msg_no_content);
+                return styledCodeBlock(t);
+            }
             android.text.SpannableStringBuilder sp = new android.text.SpannableStringBuilder();
             for (int i = 0; i < m.blocks.size(); i++) {
                 SessionApi.Block b = m.blocks.get(i);

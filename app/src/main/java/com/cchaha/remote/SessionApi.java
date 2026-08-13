@@ -83,7 +83,7 @@ public final class SessionApi {
             projectRoot = o.optString("projectRoot");
             workDir = o.optString("workDir");
             modelId = o.optString("runtimeModelId");
-            if (title == null || title.trim().isEmpty()) title = "(无标题会话)";
+            // 标题留空，由 UI 层按语言显示兜底文案（SessionApi 无 Context，不写死中文）
         }
 
     }
@@ -111,7 +111,7 @@ public final class SessionApi {
             conn.setRequestProperty("Accept", "application/json");
             int code = conn.getResponseCode();
             if (code != 200) {
-                throw new Exception("API 返回 " + code);
+                throw new Exception("API 返回 " + code + "：" + readErrorBody(conn));
             }
             StringBuilder sb = new StringBuilder();
             try (BufferedReader br = new BufferedReader(
@@ -179,10 +179,10 @@ public final class SessionApi {
                     }
                 }
             }
-            // 兼容旧缓存：仅当无内容块（旧格式消息）时才拼显示文本，省内存
+            // 兼容旧缓存：仅当无内容块（旧格式消息）时才拼显示文本，省内存；
+            // 文本留空由 UI 层按语言兜底
             if (blocks.isEmpty()) {
                 text = o.optString("text", "");
-                if (text.isEmpty()) text = "(无文本内容)";
             }
         }
 
@@ -225,7 +225,7 @@ public final class SessionApi {
             conn.setRequestProperty("Authorization", "Bearer " + token);
             conn.setRequestProperty("Accept", "application/json");
             int code = conn.getResponseCode();
-            if (code != 200) throw new Exception("API 返回 " + code);
+            if (code != 200) throw new Exception("API 返回 " + code + "：" + readErrorBody(conn));
             StringBuilder sb = new StringBuilder();
             try (BufferedReader br = new BufferedReader(
                     new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
@@ -252,30 +252,51 @@ public final class SessionApi {
         return list;
     }
 
-    /** 发送消息（202 异步接受） */
-    public static boolean sendMessage(String baseUrl, String token, String sessionId, String content) {
+    /** 发送消息（202 异步接受）；失败抛异常（含服务端错误详情，便于用户看到真实原因） */
+    public static void sendMessage(String baseUrl, String token, String sessionId, String content)
+            throws Exception {
+        String urlStr = baseUrl + "/api/sessions/" + sessionId + "/chat";
+        HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
         try {
-            String urlStr = baseUrl + "/api/sessions/" + sessionId + "/chat";
-            HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
-            try {
-                applyTrust(conn);
-                conn.setConnectTimeout(10000);
-                conn.setReadTimeout(30000);
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Referer", baseUrl + "/?token=" + encodeToken(token));
-                conn.setRequestProperty("Authorization", "Bearer " + token);
-                conn.setRequestProperty("Content-Type", "application/json");
-                conn.setDoOutput(true);
-                String body = "{\"content\":\"" + escapeJson(content) + "\",\"type\":\"user\"}";
-                conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
-                int code = conn.getResponseCode();
-                return code == 200 || code == 202;
-            } finally {
-                conn.disconnect();
+            applyTrust(conn);
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(30000);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Referer", baseUrl + "/?token=" + encodeToken(token));
+            conn.setRequestProperty("Authorization", "Bearer " + token);
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+            String body = "{\"content\":\"" + escapeJson(content) + "\",\"type\":\"user\"}";
+            conn.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
+            int code = conn.getResponseCode();
+            if (code != 200 && code != 202) {
+                throw new Exception("API 返回 " + code + "：" + readErrorBody(conn));
             }
+        } finally {
+            conn.disconnect();
+        }
+    }
+
+    /** 读取错误响应体（含服务端 message），便于用户/日志定位失败原因 */
+    private static String readErrorBody(HttpURLConnection conn) {
+        try {
+            java.io.InputStream es = conn.getErrorStream();
+            if (es == null) return "";
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(es, StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+            }
+            String raw = sb.toString();
+            try {
+                JSONObject o = new JSONObject(raw);
+                String msg = o.optString("message", "");
+                return msg.isEmpty() ? raw : msg;
+            } catch (Exception ignored) { }
+            return raw.length() > 200 ? raw.substring(0, 200) : raw;
         } catch (Exception e) {
-            Log.w(TAG, "send failed", e);
-            return false;
+            return "";
         }
     }
 

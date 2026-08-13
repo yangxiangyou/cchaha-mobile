@@ -91,4 +91,6 @@
     <string name="update_available_msg">有新版本可用</string>
     <string name="update_go">去下载</string>
     <string name="update_later">稍后</string>
+    <string name="session_no_title">无标题会话</string>
+    <string name="msg_no_content">无文本内容</string>
 </resources>

@@ -76,11 +76,12 @@ public class SessionApiParseTest {
     }
 
     @Test
-    public void parseMessages_emptyTextGetsPlaceholder() throws Exception {
+    public void parseMessages_emptyTextStaysEmpty() throws Exception {
+        // 解析层不注入文案（UI 层按语言兜底），空文本保留空串
         String json = "{\"messages\":[{\"id\":\"e1\",\"type\":\"user\",\"timestamp\":\""
                 + TS + "\",\"content\":[]}]}";
         List<SessionApi.Message> msgs = SessionApi.parseMessages(json);
-        assertEquals("(无文本内容)", msgs.get(0).text);
+        assertEquals("", msgs.get(0).text);
     }
 
     @Test

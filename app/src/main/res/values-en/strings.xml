@@ -91,4 +91,6 @@ This address has not been saved. Connect anyway? (It will not be saved.)</string
     <string name="update_available_msg">A new version is available</string>
     <string name="update_go">Get it</string>
     <string name="update_later">Later</string>
+    <string name="session_no_title">Untitled session</string>
+    <string name="msg_no_content">No text content</string>
 </resources>

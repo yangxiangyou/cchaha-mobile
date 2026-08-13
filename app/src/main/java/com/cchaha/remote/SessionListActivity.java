@@ -257,7 +257,8 @@ public class SessionListActivity extends Activity {
             TextView meta = v.findViewById(R.id.session_item_meta);
             TextView time = v.findViewById(R.id.session_item_time);
 
-            title.setText(s.title);
+            title.setText(s.title != null && !s.title.isEmpty()
+                    ? s.title : getString(R.string.session_no_title));
             String project = s.projectRoot;
             if (project != null && project.length() > 30) project = "…" + project.substring(project.length() - 30);
             String model = (s.modelId != null && !s.modelId.isEmpty()) ? s.modelId : "";
