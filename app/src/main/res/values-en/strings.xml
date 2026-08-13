@@ -10,7 +10,6 @@
     <string name="action_rename">Rename</string>
     <string name="action_edit">Edit</string>
     <string name="host_updated">Device updated</string>
-    <string name="action_devices">Devices</string>
     <string name="action_delete">Delete</string>
     <string name="current_badge">CURRENT</string>
     <string name="host_deleted">Address deleted</string>
@@ -39,8 +38,6 @@
 
 This address has not been saved. Connect anyway? (It will not be saved.)</string>
     <string name="deeplink_confirm_ok">Connect</string>
-    <string name="btn_refresh">Refresh</string>
-    <string name="btn_send">Send</string>
     <string name="url_input_hint">Enter H5 address, press Go</string>
     <string name="cd_back">Back</string>
     <string name="cd_fwd">Forward</string>
@@ -51,17 +48,10 @@ This address has not been saved. Connect anyway? (It will not be saved.)</string
     <string name="crash_desc">Please copy the error info below and send it to the developer.</string>
     <string name="crash_copy">Copy error info</string>
     <string name="crash_retry">Back and retry</string>
-    <string name="tag_thinking">thinking</string>
-    <string name="tag_tool">tool</string>
-    <string name="render_thinking">[thinking] </string>
-    <string name="render_result">[result] </string>
-    <string name="time_just_now">just now</string>
-    <string name="time_min_ago">%1$d min ago</string>
-    <string name="time_hour_ago">%1$d h ago</string>
-    <string name="time_day_ago">%1$d d ago</string>
     <string name="crash_copied">Copied — paste it to the developer</string>
     <string name="update_available_title">New version v%1$s available</string>
     <string name="update_available_msg">A new version is available</string>
     <string name="update_go">Get it</string>
     <string name="update_later">Later</string>
+    <string name="load_timeout">Load timed out — check that cc-haha is running with H5 access enabled and the network is reachable, then tap refresh</string>
 </resources>

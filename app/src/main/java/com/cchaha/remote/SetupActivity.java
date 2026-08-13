@@ -128,9 +128,12 @@ public class SetupActivity extends Activity {
     }
 
     private void startMain() {
-        // 点击设备/添加设备/冷启动 → 直接进入 cc-haha 主界面（H5 完整版）；
-        // 想用原生会话列表可从主界面首页按钮进入
-        startActivity(new Intent(this, MainActivity.class));
+        // 点击设备/添加设备/冷启动 → 直接进入 cc-haha 主界面（H5）。
+        // CLEAR_TOP+SINGLE_TOP：复用已有的主界面实例（触发 onNewIntent 切换设备），
+        // 避免换设备后返回键退回旧设备的页面（栈残留）
+        Intent i = new Intent(this, MainActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        startActivity(i);
         finish();
     }
 

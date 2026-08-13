@@ -10,7 +10,6 @@
     <string name="action_rename">重命名</string>
     <string name="action_edit">编辑</string>
     <string name="host_updated">设备已更新</string>
-    <string name="action_devices">设备</string>
     <string name="action_delete">删除</string>
     <string name="current_badge">当前</string>
     <string name="host_deleted">地址已删除</string>
@@ -39,8 +38,6 @@
 
 这个地址还没有保存过。确认后连接（不会自动保存）。</string>
     <string name="deeplink_confirm_ok">连接</string>
-    <string name="btn_refresh">刷新</string>
-    <string name="btn_send">发送</string>
     <string name="url_input_hint">输入 H5 地址后回车</string>
     <string name="cd_back">后退</string>
     <string name="cd_fwd">前进</string>
@@ -51,17 +48,10 @@
     <string name="crash_desc">请复制下面的错误信息发给开发者，方便定位问题。</string>
     <string name="crash_copy">复制错误信息</string>
     <string name="crash_retry">返回重试</string>
-    <string name="tag_thinking">思考</string>
-    <string name="tag_tool">工具</string>
-    <string name="render_thinking">[思考] </string>
-    <string name="render_result">[结果] </string>
-    <string name="time_just_now">刚刚</string>
-    <string name="time_min_ago">%1$d 分钟前</string>
-    <string name="time_hour_ago">%1$d 小时前</string>
-    <string name="time_day_ago">%1$d 天前</string>
     <string name="crash_copied">已复制，可以粘贴发给开发者</string>
     <string name="update_available_title">发现新版本 v%1$s</string>
     <string name="update_available_msg">有新版本可用</string>
     <string name="update_go">去下载</string>
     <string name="update_later">稍后</string>
+    <string name="load_timeout">加载超时：请检查电脑端 cc-haha 是否运行、H5 服务是否开启、网络是否通畅，然后点刷新重试</string>
 </resources>

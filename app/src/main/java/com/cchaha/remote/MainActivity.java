@@ -49,7 +49,10 @@ public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
     private static final int REQ_FILE_CHOOSER = 1001;
     private static final int REQ_SCAN = 1002;
+    /** 页面加载超时：服务器假死/隧道卡死时 onReceivedError 不触发，超时后提示并停止，避免无限等待 */
+    private static final long LOAD_TIMEOUT_MS = 60_000;
 
+    private final android.os.Handler mainHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private android.app.AlertDialog deepLinkDialog = null;
 
     enum ConnState { CONNECTING, CONNECTED, ERROR, DISCONNECTED }
@@ -74,7 +77,7 @@ public class MainActivity extends Activity {
     private int loadGeneration = 0; // 加载代际：用户新操作使旧重连/回调失效
     private boolean screenOn = true;
     private boolean netDownNotified = false;
-    private ConnState connState = ConnState.DISCONNECTED;
+    private long lastProgressAt = 0; // 最近一次页面进度变化时间（超时判定用）
 
     private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
         @Override
@@ -276,6 +279,7 @@ public class MainActivity extends Activity {
                 progress.setVisibility(View.VISIBLE);
                 if (loadingMask != null) loadingMask.setVisibility(View.VISIBLE);
                 setConnState(ConnState.CONNECTING);
+                scheduleLoadTimeout();
             }
 
             @Override
@@ -375,6 +379,7 @@ public class MainActivity extends Activity {
             public void onProgressChanged(WebView view, int newProgress) {
                 progress.setProgress(newProgress);
                 if (maskProgress != null) maskProgress.setProgress(newProgress);
+                lastProgressAt = System.currentTimeMillis();
             }
 
             @Override
@@ -524,9 +529,31 @@ public class MainActivity extends Activity {
         webView.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
     }
 
+    /** 加载超时兜底：页面启动后 60 秒未完成则提示并停止（服务器假死/隧道卡死时不会触发 onReceivedError） */
+    private void scheduleLoadTimeout() {
+        final int gen = loadGeneration;
+        lastProgressAt = System.currentTimeMillis();
+        mainHandler.postDelayed(() -> checkLoadTimeout(gen), LOAD_TIMEOUT_MS);
+    }
+
+    /** 超时复查：进度 30 秒内完全没动才判定卡死；慢加载（进度推进）不误杀 */
+    private void checkLoadTimeout(int gen) {
+        if (isFinishing() || isDestroyed() || gen != loadGeneration) return;
+        if (errorState) return;                                  // 已进错误态（如重连失败）
+        if (webView == null || webView.getProgress() >= 100) return; // 已加载完成
+        if (System.currentTimeMillis() - lastProgressAt < 30_000) {
+            mainHandler.postDelayed(() -> checkLoadTimeout(gen), LOAD_TIMEOUT_MS);
+            return;
+        }
+        errorState = true;
+        setConnState(ConnState.ERROR);
+        Toast.makeText(this, R.string.load_timeout, Toast.LENGTH_LONG).show();
+        try { webView.stopLoading(); } catch (Exception ignored) { }
+        showErrorPage();
+    }
+
     /** 状态指示灯：灰=未连接 黄=连接中 绿=已连接 红=连接失败（保持圆形） */
     private void setConnState(ConnState state) {
-        connState = state;
         if (statusDot == null) return;
         int color;
         switch (state) {
@@ -573,10 +600,25 @@ public class MainActivity extends Activity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        setIntent(intent);
         // 单例模式深链再次唤起
         Uri data = intent.getData();
         if (data != null && UrlUtils.isUsable(data.toString())) {
             handleDeepLink(data);
+            return;
+        }
+        // 从设备页回来（CLEAR_TOP 复用本实例）：设备可能已切换，重读并重载
+        if (storage != null) storage.reload();
+        Storage.SavedHost current = storage.getCurrentHost();
+        String target = current != null ? current.url : "";
+        if (!target.equals(currentUrl)) {
+            if (target.isEmpty()) {
+                Intent i = new Intent(this, SetupActivity.class);
+                i.putExtra(SetupActivity.EXTRA_MANUAL, true);
+                startActivity(i);
+                return;
+            }
+            loadUrl(target);
         }
     }
 
@@ -658,6 +700,8 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        // 清理挂起的超时回调，防止销毁后触碰 UI
+        mainHandler.removeCallbacksAndMessages(null);
         // 文件选择器未返回时置空回调，防止悬挂导致后续上传卡死
         if (filePathCallback != null) {
             filePathCallback.onReceiveValue(null);
