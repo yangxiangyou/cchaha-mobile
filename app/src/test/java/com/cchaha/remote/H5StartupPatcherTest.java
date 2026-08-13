@@ -69,25 +69,34 @@ public class H5StartupPatcherTest {
     public void fetchPatchedEndToEnd() throws Exception {
         final byte[] body = WATCHDOG_SNIPPET.getBytes(StandardCharsets.UTF_8);
         ServerSocket server = new ServerSocket(0, 1);
+        // 服务器循环 accept：客户端连接偶发失败（本地回环 RST）时可重试
         Thread t = new Thread(() -> {
             try {
-                Socket s = server.accept();
-                InputStream in = s.getInputStream();
-                byte[] buf = new byte[2048];
-                in.read(buf); // 读请求头即可
-                OutputStream out = s.getOutputStream();
-                String head = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n" +
-                        "Content-Length: " + body.length + "\r\nConnection: close\r\n\r\n";
-                out.write(head.getBytes(StandardCharsets.US_ASCII));
-                out.write(body);
-                out.flush();
-                s.close();
+                for (int i = 0; i < 3; i++) {
+                    Socket s = server.accept();
+                    try {
+                        InputStream in = s.getInputStream();
+                        byte[] buf = new byte[2048];
+                        in.read(buf); // 读请求头即可
+                        OutputStream out = s.getOutputStream();
+                        String head = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n" +
+                                "Content-Length: " + body.length + "\r\nConnection: close\r\n\r\n";
+                        out.write(head.getBytes(StandardCharsets.US_ASCII));
+                        out.write(body);
+                        out.flush();
+                    } finally {
+                        try { s.close(); } catch (Exception ignored) { }
+                    }
+                }
             } catch (Exception ignored) { }
         });
         t.start();
         try {
             int port = server.getLocalPort();
-            String patched = H5StartupPatcher.fetchPatched("http://127.0.0.1:" + port + "/?token=test");
+            String patched = null;
+            for (int i = 0; i < 3 && patched == null; i++) {
+                patched = H5StartupPatcher.fetchPatched("http://127.0.0.1:" + port + "/?token=test");
+            }
             assertNotNull(patched);
             assertFalse(patched.contains("function renderStartupError(reason) {\n          if (window.__CC_HAHA_BOOTSTRAPPED__)"));
             assertTrue(patched.contains("function renderStartupError(reason) { return;"));

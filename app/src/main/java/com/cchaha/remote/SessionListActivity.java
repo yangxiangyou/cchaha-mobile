@@ -194,6 +194,12 @@ public class SessionListActivity extends Activity {
                     if (isFinishing() || isDestroyed()) return;
                     if (adapter.getCount() == 0) {
                         statusText.setText(R.string.session_failed);
+                        // 无缓存失败：Toast 带服务端详情（token 失效/会话不存在等），与消息页一致
+                        String detail = e.getMessage();
+                        if (detail != null && !detail.isEmpty()) {
+                            if (detail.length() > 120) detail = detail.substring(0, 120);
+                            Toast.makeText(this, detail, Toast.LENGTH_LONG).show();
+                        }
                     } else {
                         statusText.setText(getString(R.string.session_cached_stale, fmtTime(cache.savedAtMs(baseUrl))));
                         Toast.makeText(this, R.string.session_refresh_failed, Toast.LENGTH_SHORT).show();
