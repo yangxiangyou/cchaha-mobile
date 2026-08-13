@@ -125,6 +125,7 @@ public final class AppUpdateChecker {
                 });
             } catch (Exception e) {
                 Log.w(TAG, "update check failed", e);
+                checked = false; // 异常也复位：本次检查失败不永久禁用
             }
         });
     }

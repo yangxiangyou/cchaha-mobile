@@ -361,17 +361,25 @@ public class SessionMessagesActivity extends Activity {
             baseUrl = UrlUtils.trimTrailingSlash(hostUrl);
             token = hostToken == null ? "" : hostToken;
         }
-        if (newId == null || newId.isEmpty() || (newId.equals(sessionId) && !hostChanged)) return;
+        // 通知点开（带设备参数）：即使同一会话也强制刷新一次（用户点通知就是要看新消息）
+        boolean fromNotification = hostUrl != null && !hostUrl.isEmpty();
+        if (newId == null || newId.isEmpty()
+                || (newId.equals(sessionId) && !hostChanged && !fromNotification)) return;
+        boolean switchSession = !newId.equals(sessionId);
         sessionId = newId;
         sessionTitle = newTitle != null ? newTitle : "";
         TextView title = findViewById(R.id.msg_title);
         if (title != null) title.setText(sessionTitle.isEmpty()
                 ? getString(R.string.msg_default_title) : sessionTitle);
-        lastMessageCount = 0;
-        adapter.expandedIds.clear(); // 折叠状态不跨会话残留
-        loading = false;             // 释放旧会话的拉取锁，立即拉新会话
-        adapter.refresh(new ArrayList<>());
-        statusText.setText(R.string.msg_loading);
+        if (switchSession) {
+            // 换会话：清空旧视图重新加载
+            lastMessageCount = 0;
+            adapter.expandedIds.clear(); // 折叠状态不跨会话残留
+            loading = false;             // 释放旧会话的拉取锁，立即拉新会话
+            adapter.refresh(new ArrayList<>());
+            statusText.setText(R.string.msg_loading);
+        }
+        // 同会话通知点开：保留当前视图，后台刷新即可（不闪屏）
         loadMessages();
     }
 
