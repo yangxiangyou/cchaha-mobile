@@ -229,7 +229,14 @@ public class SessionMessagesActivity extends Activity {
                 try {
                     String json = SessionApi.fetchMessagesJson(url, tk, sid);
                     List<SessionApi.Message> messages = SessionApi.parseMessages(json);
-                    messageCache.save(sid, json); // 解析成功后才写缓存
+                    // 后台预判"无变化"（条数相同且最后一条一致）：轮询重复 JSON 不落盘，
+                    // 省掉每 30s 一次的数 MB 写盘（闪存磨损 + IO）
+                    boolean unchanged = lastMessageCount > 0
+                            && messages.size() == lastMessageCount
+                            && !messages.isEmpty()
+                            && adapter.lastMessageId() != null
+                            && adapter.lastMessageId().equals(messages.get(messages.size() - 1).id);
+                    if (!unchanged) messageCache.save(sid, json); // 解析成功且确有变化才写缓存
                     mainHandler.post(() -> {
                         if (isFinishing() || isDestroyed()) return;
                         // 会话已切换（onNewIntent）：旧会话的拉取结果不得覆盖新会话
@@ -239,13 +246,13 @@ public class SessionMessagesActivity extends Activity {
                             notifyNewReply(messages.size() - lastMessageCount);
                         }
                         // 无变化（条数相同且最后一条一致）：不重排列表，省滚动开销
-                        boolean unchanged = lastMessageCount > 0
+                        boolean noChange = lastMessageCount > 0
                                 && messages.size() == lastMessageCount
                                 && !messages.isEmpty()
                                 && adapter.lastMessageId() != null
                                 && adapter.lastMessageId().equals(messages.get(messages.size() - 1).id);
                         lastMessageCount = messages.size();
-                        if (unchanged) {
+                        if (noChange) {
                             swipe.setRefreshing(false);
                             loading = false;
                             return;
