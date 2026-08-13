@@ -100,7 +100,8 @@
         <EditText
             android:id="@+id/msg_input"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
+            android:minHeight="44dp"
             android:layout_weight="1"
             android:background="@drawable/url_bg"
             android:paddingStart="12dp"
