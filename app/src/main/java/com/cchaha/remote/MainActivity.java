@@ -354,9 +354,12 @@ public class MainActivity extends Activity {
                     final int gen = ++loadGeneration;
                     final String retryUrl = currentUrl;
                     view.postDelayed(() -> {
+                        // mainFrameFailCount 已被 onPageFinished 清零说明页面其实加载成功了，
+                        // 不再重载（避免"已连接又闪一下"）；loadUrlTemporary 保持"临时连接不保存"语义
                         if (!isFinishing() && gen == loadGeneration
+                                && mainFrameFailCount > 0
                                 && !currentUrl.isEmpty() && retryUrl.equals(currentUrl)) {
-                            loadUrl(retryUrl);
+                            loadUrlTemporary(retryUrl);
                         }
                     }, 2000);
                     return;
@@ -447,7 +450,7 @@ public class MainActivity extends Activity {
         btnFwd.setOnClickListener(v -> { if (webView.canGoForward()) webView.goForward(); });
         btnReload.setOnClickListener(v -> {
             if (errorState && !currentUrl.isEmpty()) {
-                loadUrl(currentUrl); // 错误页状态下重新加载原地址
+                loadUrlTemporary(currentUrl); // 错误页状态下重新加载原地址（不改写设备保存状态）
             } else {
                 webView.reload();
             }
@@ -478,7 +481,8 @@ public class MainActivity extends Activity {
             public void onAvailable(Network network) {
                 runOnUiThread(() -> {
                     netDownNotified = false;
-                    if (errorState && !currentUrl.isEmpty()) loadUrl(currentUrl);
+                    // 恢复加载当前地址；loadUrlTemporary 不改写设备保存状态
+                    if (errorState && !currentUrl.isEmpty()) loadUrlTemporary(currentUrl);
                 });
             }
         };
