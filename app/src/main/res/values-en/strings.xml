@@ -33,24 +33,6 @@
     <string name="err_check_hint">Check:\n① Is cc-haha running on the computer?\n② Is the address correct? (LAN: same Wi-Fi; remote: public URL or tunnel)\n③ Is H5 Access still enabled?</string>
     <string name="err_tap_refresh">Tap refresh above to retry</string>
     <string name="setup_hint">How to get the address:\n1. Open cc-haha desktop app on your computer\n2. Settings → H5 Access → enable “Enable H5 access”\n3. Tap “Generate token” — a QR code appears on screen\n4. Tap “Scan QR” below to scan it, or tap “Copy launch URL” and paste it above\n\nTap an address to connect; long-press to rename or delete.\nNote: phone and computer must be on the same Wi-Fi. The link contains a token — treat it like a password.</string>
-    <string name="session_loading">Loading sessions…</string>
-    <string name="session_failed">Cannot reach server — is cc-haha running on the computer?</string>
-    <string name="session_no_host">Configure an address in the connect page first</string>
-
-    <string name="session_updated">Updated · %1$s</string>
-    <string name="session_cached_at">Cached at %1$s</string>
-    <string name="session_cached_stale">Server offline, showing cache (%1$s)</string>
-    <string name="session_refresh_failed">Refresh failed — server not responding</string>
-    <string name="msg_loading">Loading messages… (large sessions take a few seconds)</string>
-    <string name="msg_updated">%1$d messages · updated</string>
-    <string name="msg_failed">Failed to load messages — check the server</string>
-    <string name="msg_sending">Sending…</string>
-    <string name="msg_sent">Sent, waiting for reply…</string>
-    <string name="msg_send_failed">Send failed — server not responding</string>
-    <string name="msg_cache_loading">Showing cached messages, refreshing…</string>
-    <string name="msg_refresh_failed_keep">Refresh failed — showing cached content</string>
-    <string name="msg_full_version">Full version</string>
-    <string name="msg_empty">No messages yet — send the first one</string>
     <string name="msg_conn_loading">Connecting to your computer…</string>
     <string name="deeplink_confirm_title">Connect to a new address?</string>
     <string name="deeplink_confirm_msg">%1$s
@@ -59,7 +41,6 @@ This address has not been saved. Connect anyway? (It will not be saved.)</string
     <string name="deeplink_confirm_ok">Connect</string>
     <string name="btn_refresh">Refresh</string>
     <string name="btn_send">Send</string>
-    <string name="msg_input_hint">Type a message…</string>
     <string name="url_input_hint">Enter H5 address, press Go</string>
     <string name="cd_back">Back</string>
     <string name="cd_fwd">Forward</string>
@@ -70,18 +51,10 @@ This address has not been saved. Connect anyway? (It will not be saved.)</string
     <string name="crash_desc">Please copy the error info below and send it to the developer.</string>
     <string name="crash_copy">Copy error info</string>
     <string name="crash_retry">Back and retry</string>
-    <string name="session_search_hint">Search sessions…</string>
-    <string name="msg_default_title">Session</string>
-    <string name="msg_reply_notification">%1$d new message(s)</string>
-    <string name="msg_channel_name">Session replies</string>
-    <string name="msg_who_me">Me</string>
-    <string name="msg_who_ai">Claude</string>
     <string name="tag_thinking">thinking</string>
     <string name="tag_tool">tool</string>
     <string name="render_thinking">[thinking] </string>
     <string name="render_result">[result] </string>
-    <string name="session_no_project">No project</string>
-    <string name="msg_message_count">%1$d msgs</string>
     <string name="time_just_now">just now</string>
     <string name="time_min_ago">%1$d min ago</string>
     <string name="time_hour_ago">%1$d h ago</string>
@@ -91,6 +64,4 @@ This address has not been saved. Connect anyway? (It will not be saved.)</string
     <string name="update_available_msg">A new version is available</string>
     <string name="update_go">Get it</string>
     <string name="update_later">Later</string>
-    <string name="session_no_title">Untitled session</string>
-    <string name="msg_no_content">No text content</string>
 </resources>

@@ -19,8 +19,8 @@ android {
         minSdk 26
         targetSdk 34
         // 注意：每次发版必须同步递增 versionCode 和 versionName（v1.7.x = code 2x）
-        versionCode 53
-        versionName "1.9.8"
+        versionCode 54
+        versionName "2.0.0"
     }
 
     signingConfigs {
@@ -74,8 +74,6 @@ configurations.all {
 dependencies {
     // AndroidX 基础（CameraX 需要 LifecycleOwner）
     implementation 'androidx.activity:activity:1.9.1'
-    // 下拉刷新
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
 
     // 自研扫码：CameraX 相机预览 + ZXing 解码（不依赖外部扫码 Activity，兼容性更稳）
     def camerax = '1.3.4' // 保持 1.3.4：1.6.x 需 compileSdk 36；当前 SDK 34。16KB 页对齐待 SDK 升级后处理

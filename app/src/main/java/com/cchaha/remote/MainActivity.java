@@ -49,11 +49,7 @@ public class MainActivity extends Activity {
     private static final String TAG = "MainActivity";
     private static final int REQ_FILE_CHOOSER = 1001;
     private static final int REQ_SCAN = 1002;
-    static final String EXTRA_OPEN_SESSION = "open_session_id";
-    static final String EXTRA_SESSION_TITLE = "open_session_title";
 
-    private String pendingSessionId = null;
-    private String pendingSessionTitle = null;
     private android.app.AlertDialog deepLinkDialog = null;
 
     enum ConnState { CONNECTING, CONNECTED, ERROR, DISCONNECTED }
@@ -158,13 +154,7 @@ public class MainActivity extends Activity {
 
         registerNetworkMonitor();
 
-        // 原生会话列表点击进入：记录待定位的会话
-        if (getIntent() != null) {
-            pendingSessionId = getIntent().getStringExtra(EXTRA_OPEN_SESSION);
-            pendingSessionTitle = getIntent().getStringExtra(EXTRA_SESSION_TITLE);
-        }
-
-        // 深链：外部 URL 唤起（浏览器点 H5 链接 / haha:// 协议）
+        // 深链：外部 URL 唤起（浏览器点 H5 链接）
         // 安全：已保存主机直接连；未知主机需用户确认（防恶意深链注入白名单）
         Uri data = getIntent().getData();
         if (data != null && UrlUtils.isUsable(data.toString())) {
@@ -172,13 +162,11 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 消息页"完整版"进入：优先加载消息页所属设备（通知跨设备场景不串设备）
-        String hostUrl = getIntent().getStringExtra(SessionMessagesActivity.EXTRA_HOST_URL);
-        String hostToken = getIntent().getStringExtra(SessionMessagesActivity.EXTRA_HOST_TOKEN);
+        // 自动更新检查（后台，失败静默）
+        AppUpdateChecker.check(this);
+
         Storage.SavedHost current = storage.getCurrentHost();
-        if (hostUrl != null && !hostUrl.isEmpty()) {
-            loadUrl(joinHostUrl(hostUrl, hostToken));
-        } else if (current != null) {
+        if (current != null) {
             loadUrl(current.url);
         } else {
             // 没地址：去连接页
@@ -187,15 +175,6 @@ public class MainActivity extends Activity {
             startActivity(i);
             finish();
         }
-    }
-
-    /** baseUrl + token 拼完整加载 URL（token 空则原样地址） */
-    private static String joinHostUrl(String base, String token) {
-        if (token == null || token.isEmpty()) return base;
-        String enc;
-        try { enc = java.net.URLEncoder.encode(token, "UTF-8"); }
-        catch (Exception e) { enc = token; }
-        return base + "/?token=" + enc;
     }
 
     /**
@@ -212,31 +191,6 @@ public class MainActivity extends Activity {
                 "var b=document.querySelector('[data-testid=\"mobile-sidebar-toggle\"]');" +
                 "if(b){clearInterval(t);b.click();window.__hahaDrawerOpened=true;return;}" +
                 "if(++n>150)clearInterval(t);},200);})();", null);
-    }
-
-    /**
-     * 尽力自动定位会话：页面加载后注入 JS，
-     * 自动点开"选择项目"（如需要）并按标题文本匹配点击目标会话。
-     * cc-haha H5 不支持 URL 定位会话，此为页面自动化兜底；失败则用户手动点。
-     */
-    private void autoOpenSession() {
-        if (pendingSessionId == null || webView == null) return;
-        String target = pendingSessionTitle != null ? pendingSessionTitle : pendingSessionId;
-        if (target.length() > 24) target = target.substring(0, 24);
-        // 转义为 JS 字符串字面量（防会话名注入脚本）
-        final String match = org.json.JSONObject.quote(target);
-        final String sid = org.json.JSONObject.quote(pendingSessionId);
-        // pending 保留到 JS 侧确认成功（window 标记）：页面 reload/回退后仍可重试定位
-        webView.evaluateJavascript(
-                "(function(){if(window.__hahaAutoOpened)return;" +
-                "var target=" + match + ",sid=" + sid + ",steps=0;" +
-                "var t=setInterval(function(){steps++;" +
-                "if(!window.__hahaPicked){var pk=[...document.querySelectorAll('button')].find(function(b){return /选择项目/.test(b.textContent||'')});" +
-                "if(pk){pk.click();window.__hahaPicked=true;}}" +
-                "var it=[...document.querySelectorAll('[class*=\"cursor-pointer\"],button')].find(function(e){" +
-                "var x=(e.textContent||'').trim();return x.length>4&&x.length<80&&(x.indexOf(target.slice(0,12))>=0||target.indexOf(x.slice(0,10))>=0);});" +
-                "if(it){it.click();window.__hahaAutoOpened=true;clearInterval(t);}" +
-                "if(steps>40)clearInterval(t);},1000);})();", null);
     }
 
     /** 主机是否在已保存主机列表（SSL 放行与页面拦截白名单用；host:port 归一比较，防同主机异端口绕过） */
@@ -344,7 +298,6 @@ public class MainActivity extends Activity {
                 if (isHttp) {
                     injectNarrowScreenFix();
                     openSessionDrawer();
-                    autoOpenSession();
                 }
             }
 
@@ -465,8 +418,10 @@ public class MainActivity extends Activity {
         });
         btnScan.setOnClickListener(v -> startScanner());
         btnHome.setOnClickListener(v -> {
-            // 回原生会话列表（不 finish 自己：列表页返回键可回到 H5，避免"返回即退出"）
-            startActivity(new Intent(this, SessionListActivity.class));
+            // 设备管理（换电脑/添加/编辑）
+            Intent i = new Intent(this, SetupActivity.class);
+            i.putExtra(SetupActivity.EXTRA_MANUAL, true);
+            startActivity(i);
         });
     }
 
@@ -731,8 +686,8 @@ public class MainActivity extends Activity {
                 webView.goBack();
                 return true;
             }
-            // 没有可返回的历史则回到会话列表（不 finish：列表页再返回一次才退出）
-            startActivity(new Intent(this, SessionListActivity.class));
+            // 没有可返回的历史：退出 App（单界面 App）
+            finish();
             return true;
         }
         return super.onKeyDown(keyCode, event);

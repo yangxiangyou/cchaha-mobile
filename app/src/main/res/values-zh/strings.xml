@@ -33,24 +33,6 @@
     <string name="err_check_hint">检查：\n① 电脑上的 cc-haha 是否在运行\n② 地址是否填对（局域网要同一 Wi-Fi；远程用公网域名或隧道地址）\n③ H5 开关是否还开着</string>
     <string name="err_tap_refresh">点上方刷新按钮重试</string>
     <string name="setup_hint">怎么填：\n1. 电脑上打开 cc-haha → 设置 → H5 Access → 开启\n2. 地址行填：https://你的地址（如 192.168.1.20:8080）\n3. token 行填：点 Copy launch URL，取 ?token= 后面那串\n\n或者把完整链接（含 token）直接粘到地址行，token 行留空即可。\n点「扫码连接」扫电脑屏幕上的二维码也行。\n点地址直接连接，长按可重命名或删除。\n注意：token 等于你电脑的钥匙，别发给别人。</string>
-    <string name="session_loading">正在加载会话列表…</string>
-    <string name="session_failed">无法连接服务器，请检查电脑上的 cc-haha 是否在运行</string>
-    <string name="session_no_host">请先在连接页配置地址</string>
-
-    <string name="session_updated">已更新 · %1$s</string>
-    <string name="session_cached_at">缓存于 %1$s</string>
-    <string name="session_cached_stale">服务器无响应，显示缓存（%1$s）</string>
-    <string name="session_refresh_failed">刷新失败，服务器无响应</string>
-    <string name="msg_loading">正在加载消息…（大会话约需几秒）</string>
-    <string name="msg_updated">共 %1$d 条消息 · 已更新</string>
-    <string name="msg_failed">消息加载失败，请检查服务器</string>
-    <string name="msg_sending">发送中…</string>
-    <string name="msg_sent">已发送，等待回复…</string>
-    <string name="msg_send_failed">发送失败，服务器无响应</string>
-    <string name="msg_cache_loading">显示缓存内容，后台刷新中…</string>
-    <string name="msg_refresh_failed_keep">刷新失败，保留缓存内容</string>
-    <string name="msg_full_version">完整版</string>
-    <string name="msg_empty">暂无消息，发送第一条吧</string>
     <string name="msg_conn_loading">正在连接电脑…</string>
     <string name="deeplink_confirm_title">连接到新地址？</string>
     <string name="deeplink_confirm_msg">%1$s
@@ -59,7 +41,6 @@
     <string name="deeplink_confirm_ok">连接</string>
     <string name="btn_refresh">刷新</string>
     <string name="btn_send">发送</string>
-    <string name="msg_input_hint">输入消息…</string>
     <string name="url_input_hint">输入 H5 地址后回车</string>
     <string name="cd_back">后退</string>
     <string name="cd_fwd">前进</string>
@@ -70,18 +51,10 @@
     <string name="crash_desc">请复制下面的错误信息发给开发者，方便定位问题。</string>
     <string name="crash_copy">复制错误信息</string>
     <string name="crash_retry">返回重试</string>
-    <string name="session_search_hint">搜索会话…</string>
-    <string name="msg_default_title">会话</string>
-    <string name="msg_reply_notification">收到 %1$d 条新消息</string>
-    <string name="msg_channel_name">会话回复</string>
-    <string name="msg_who_me">我</string>
-    <string name="msg_who_ai">Claude</string>
     <string name="tag_thinking">思考</string>
     <string name="tag_tool">工具</string>
     <string name="render_thinking">[思考] </string>
     <string name="render_result">[结果] </string>
-    <string name="session_no_project">未指定项目</string>
-    <string name="msg_message_count">%1$d 条</string>
     <string name="time_just_now">刚刚</string>
     <string name="time_min_ago">%1$d 分钟前</string>
     <string name="time_hour_ago">%1$d 小时前</string>
@@ -91,6 +64,4 @@
     <string name="update_available_msg">有新版本可用</string>
     <string name="update_go">去下载</string>
     <string name="update_later">稍后</string>
-    <string name="session_no_title">无标题会话</string>
-    <string name="msg_no_content">无文本内容</string>
 </resources>

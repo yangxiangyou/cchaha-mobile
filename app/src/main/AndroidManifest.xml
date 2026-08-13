@@ -5,7 +5,6 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
@@ -31,18 +30,6 @@
         <activity
             android:name=".CrashActivity"
             android:exported="false" />
-
-        <!-- 原生会话列表（Codex 式；singleTop 避免换设备后返回旧实例的栈残留） -->
-        <activity
-            android:name=".SessionListActivity"
-            android:exported="false"
-            android:launchMode="singleTop" />
-
-        <!-- 原生消息流（大会话，避免 WebView 超时） -->
-        <activity
-            android:name=".SessionMessagesActivity"
-            android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
 
         <!-- 扫码页（CameraX 自研） -->
         <activity
