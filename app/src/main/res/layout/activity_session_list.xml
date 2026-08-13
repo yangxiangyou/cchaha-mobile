@@ -39,6 +39,11 @@
 
     </LinearLayout>
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/cc_border" />
+
     <!-- 搜索框 -->
     <EditText
         android:id="@+id/session_search"

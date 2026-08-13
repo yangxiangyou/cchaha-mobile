@@ -67,7 +67,12 @@ public class SetupActivity extends Activity {
             return;
         }
 
-        hint.setText(R.string.setup_hint);
+        // 首次使用（没有设备）才显示填写帮助；已有设备时底部保持干净
+        if (storage.getHosts().isEmpty()) {
+            hint.setText(R.string.setup_hint);
+        } else {
+            hint.setVisibility(View.GONE);
+        }
 
         adapter = new HostAdapter(storage, storage.getHosts());
         hostList.setAdapter(adapter);
@@ -315,7 +320,8 @@ public class SetupActivity extends Activity {
             TextView url = v.findViewById(R.id.host_url);
             TextView current = v.findViewById(R.id.host_current);
             name.setText(h.name);
-            url.setText(h.url);
+            // 脱敏显示：去 query（token 是钥匙，列表上防截屏泄露）
+            url.setText(UrlUtils.displayUrl(h.url));
             // 当前主机标记（朱红小标签）
             Storage.SavedHost cur = storage.getCurrentHost();
             current.setVisibility(cur != null && cur.id.equals(h.id) ? View.VISIBLE : View.GONE);

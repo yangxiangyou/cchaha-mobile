@@ -81,6 +81,13 @@ public final class UrlUtils {
         }
     }
 
+    /** 展示用脱敏：去掉 query（含 token），防截屏/录屏泄露 */
+    public static String displayUrl(String url) {
+        if (url == null) return "";
+        int q = url.indexOf('?');
+        return q > 0 ? url.substring(0, q) : url;
+    }
+
     /** 去掉 URL 尾斜杠（统一 baseUrl 形态，避免双斜杠请求与缓存键不一致） */
     public static String trimTrailingSlash(String url) {
         if (url == null) return "";

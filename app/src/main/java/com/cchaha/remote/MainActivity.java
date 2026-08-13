@@ -538,9 +538,7 @@ public class MainActivity extends Activity {
 
     /** 地址栏脱敏显示：去掉 query（含 token），防截屏/录屏泄露 */
     private static String displayUrl(String url) {
-        if (url == null) return "";
-        int q = url.indexOf('?');
-        return q > 0 ? url.substring(0, q) : url;
+        return UrlUtils.displayUrl(url);
     }
 
     private void showErrorPage() {

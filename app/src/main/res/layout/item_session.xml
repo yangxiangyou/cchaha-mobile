@@ -6,6 +6,7 @@
     android:orientation="vertical"
     android:layout_marginTop="8dp"
     android:background="@drawable/bg_host_card"
+    android:foreground="?android:attr/selectableItemBackground"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
     android:paddingTop="14dp"
