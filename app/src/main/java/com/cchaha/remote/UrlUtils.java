@@ -1,5 +1,7 @@
 package com.cchaha.remote;
 
+import java.util.Locale;
+
 /**
  * URL 规范化与校验工具（纯 Java 实现，便于单元测试）。
  * cc-haha 的 H5 链接是 http(s)://host:port 形式（可能带 token 参数）。
@@ -79,6 +81,33 @@ public final class UrlUtils {
         } catch (Exception e) {
             return raw;
         }
+    }
+
+    /** 归一化 host:port（http 默认 80 / https 默认 443），主机白名单比较用；解析失败返回空串 */
+    public static String authorityOf(String url) {
+        if (url == null || !isUsable(url)) return "";
+        int schemeEnd = url.indexOf("://");
+        String rest = url.substring(schemeEnd + 3);
+        int end = rest.length();
+        for (int i = 0; i < rest.length(); i++) {
+            char c = rest.charAt(i);
+            if (c == '/' || c == '?' || c == '#') { end = i; break; }
+        }
+        String authority = rest.substring(0, end);
+        String host = authority;
+        int port = -1;
+        if (authority.endsWith("]")) {
+            // IPv6：[::1]
+            host = authority;
+        } else if (authority.contains(":")) {
+            int idx = authority.lastIndexOf(':');
+            host = authority.substring(0, idx);
+            try { port = Integer.parseInt(authority.substring(idx + 1)); }
+            catch (NumberFormatException e) { port = -1; }
+        }
+        String scheme = url.substring(0, schemeEnd).toLowerCase(Locale.US);
+        if (port <= 0) port = "https".equals(scheme) ? 443 : 80;
+        return host.toLowerCase(Locale.US) + ":" + port;
     }
 
     /** 展示用脱敏：去掉 query（含 token），防截屏/录屏泄露 */

@@ -69,4 +69,22 @@ public class UrlUtilsTest {
         assertEquals("未命名", UrlUtils.extractLabel("http://"));
         assertEquals("未命名", UrlUtils.extractLabel(null));
     }
+
+    @Test
+    public void authorityOf_normalizesDefaultPorts() {
+        assertEquals("example.com:8080", UrlUtils.authorityOf("http://example.com:8080"));
+        assertEquals("example.com:80", UrlUtils.authorityOf("http://example.com"));
+        assertEquals("example.com:443", UrlUtils.authorityOf("https://example.com"));
+        assertEquals("192.168.1.20:8080", UrlUtils.authorityOf("http://192.168.1.20:8080/?token=x"));
+        assertEquals("host:8080", UrlUtils.authorityOf("https://host:8080/path"));
+    }
+
+    @Test
+    public void authorityOf_rejectsInvalidAndCase() {
+        assertEquals("", UrlUtils.authorityOf(null));
+        assertEquals("", UrlUtils.authorityOf("haha://host"));
+        assertEquals("", UrlUtils.authorityOf("http://"));
+        assertEquals("host:8080", UrlUtils.authorityOf("http://HOST:8080")); // host 大小写归一为小写
+        assertEquals("host:8080", UrlUtils.authorityOf("http://host:8080"));
+    }
 }

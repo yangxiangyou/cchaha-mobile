@@ -239,20 +239,18 @@ public class MainActivity extends Activity {
                 "if(steps>40)clearInterval(t);},1000);})();", null);
     }
 
-    /** 主机是否在已保存主机列表（SSL 放行与页面拦截白名单用；复用 storage 字段避免高频建对象） */
+    /** 主机是否在已保存主机列表（SSL 放行与页面拦截白名单用；host:port 归一比较，防同主机异端口绕过） */
     private boolean isAllowedHost(String url) {
         try {
-            String host = android.net.Uri.parse(url).getHost();
-            if (host == null || host.isEmpty()) return false;
+            String auth = UrlUtils.authorityOf(url);
+            if (auth.isEmpty()) return false;
             if (currentUrl != null && !currentUrl.isEmpty()) {
-                String cur = android.net.Uri.parse(currentUrl).getHost();
-                if (host.equalsIgnoreCase(cur)) return true;
+                if (auth.equals(UrlUtils.authorityOf(currentUrl))) return true;
             }
             if (storage != null) {
                 List<Storage.SavedHost> hosts = storage.getHosts();
                 for (Storage.SavedHost h : hosts) {
-                    String hh = android.net.Uri.parse(h.url).getHost();
-                    if (hh != null && hh.equalsIgnoreCase(host)) return true;
+                    if (auth.equals(UrlUtils.authorityOf(h.url))) return true;
                 }
             }
             return false;
@@ -289,7 +287,17 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return false; // 全部在 App 内加载
+                String scheme = request.getUrl().getScheme();
+                // http(s) 在 App 内加载；其他协议（mailto/tel/geo…）交系统处理，避免卡在 WebView 里
+                if (scheme != null && !scheme.startsWith("http")) {
+                    try {
+                        startActivity(new Intent(Intent.ACTION_VIEW, request.getUrl()));
+                    } catch (Exception e) {
+                        Toast.makeText(MainActivity.this, R.string.invalid_url, Toast.LENGTH_SHORT).show();
+                    }
+                    return true;
+                }
+                return false;
             }
 
             @Override
@@ -621,7 +629,7 @@ public class MainActivity extends Activity {
     private void handleDeepLink(Uri data) {
         final String url = data.toString();
         String host = data.getHost();
-        boolean known = host != null && hostSaved(host);
+        boolean known = host != null && hostSaved(url); // host:port 归一比较
         if (known) {
             loadUrl(url);
             return;
@@ -641,14 +649,15 @@ public class MainActivity extends Activity {
         deepLinkDialog.show();
     }
 
-    /** 主机是否已保存（白名单判断用） */
-    private boolean hostSaved(String host) {
+    /** 主机是否已保存（白名单判断用；host:port 归一比较） */
+    private boolean hostSaved(String url) {
         if (storage == null) return false;
         try {
+            String auth = UrlUtils.authorityOf(url);
+            if (auth.isEmpty()) return false;
             List<Storage.SavedHost> hosts = storage.getHosts();
             for (Storage.SavedHost h : hosts) {
-                String hh = android.net.Uri.parse(h.url).getHost();
-                if (hh != null && hh.equalsIgnoreCase(host)) return true;
+                if (auth.equals(UrlUtils.authorityOf(h.url))) return true;
             }
         } catch (Exception e) {
             Log.w(TAG, "hostSaved failed", e);
